@@ -1,0 +1,19 @@
+{
+  "name": "flarewall",
+  "version": "0.0.1",
+  "description": "Renamed to flarealoy. Install flarealoy instead.",
+  "license": "MIT",
+  "author": "Mukitul Islam Mukit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mimukit/flarealoy.git"
+  },
+  "homepage": "https://www.npmjs.com/package/flarealoy",
+  "keywords": [
+    "flarealoy",
+    "cloudflare"
+  ],
+  "files": [
+    "README.md"
+  ]
+}
