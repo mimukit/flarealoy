@@ -106,7 +106,7 @@ export interface TuiState {
 /**
  * Requests the runner carries out. `gen` ties the answers to the load that asked for them.
  * `apply-zone` runs applyInventoryZone on one zone; `confirm-answer` answers its y/N prompt.
- * `add-zones` writes an inventory entry for each zone, one after another, as `flarewall add` does.
+ * `add-zones` writes an inventory entry for each zone, one after another, as `flarealoy security add` does.
  */
 export type Effect =
   | { kind: 'load'; gen: number }

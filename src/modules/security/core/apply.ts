@@ -7,7 +7,7 @@ import { PHASES, render, type DesiredZone, type Phase, type Rule } from './rende
 import type { Baseline, Inventory } from './schema.js';
 import { readLiveZone } from './status.js';
 
-/** The rule fields flarewall sends: a restore keeps only these, and an owned rule carries no others. */
+/** The rule fields flarealoy sends: a restore keeps only these, and an owned rule carries no others. */
 export const WRITABLE_FIELDS = ['id', 'ref', 'description', 'action', 'expression', 'enabled', 'action_parameters', 'ratelimit'] as const;
 
 /** Fields Cloudflare adds on read and rejects or ignores on write. An unowned rule keeps every other field. */
@@ -105,7 +105,7 @@ export function writableRule(rule: LiveRule | Rule): LiveRule {
   return pick(rule, WRITABLE_FIELDS);
 }
 
-/** An unowned rule as flarewall sends it back: every field except the read-only ones. */
+/** An unowned rule as flarealoy sends it back: every field except the read-only ones. */
 function keptRule(rule: LiveRule): LiveRule {
   const out: LiveRule = {};
   for (const [field, value] of Object.entries(rule)) {

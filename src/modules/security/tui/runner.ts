@@ -1,5 +1,5 @@
 // Runs the reducer's effects: reads the data store and the live zones through the core, applies
-// zones through applyInventoryZone, adds zones as `flarewall add` does, and sends the answers back
+// zones through applyInventoryZone, adds zones as `flarealoy security add` does, and sends the answers back
 // as data events. It holds no rule
 // logic; statusAll and applyZone decide every state and every write.
 import type { CloudflareApi } from '../core/api.js';
@@ -15,9 +15,9 @@ export interface RunnerDeps {
   writeApi?: CloudflareApi;
   /** Reads the current baseline and inventory revisions. Its error message names the revision. */
   load: () => Promise<TuiData>;
-  /** Stores the backup before a write: the same writer as `flarewall apply --write`. */
+  /** Stores the backup before a write: the same writer as `flarealoy security apply --write`. */
   backup: BackupWriter;
-  /** Writes the first inventory revision for a zone and names it: the same step as `flarewall add`. */
+  /** Writes the first inventory revision for a zone and names it: the same step as `flarealoy security add`. */
   add: (zone: string) => Promise<string>;
   /** Called on the quit effect. */
   onQuit: () => void;

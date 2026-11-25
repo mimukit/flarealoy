@@ -1,4 +1,4 @@
-// Detects rules that the old cf-security-setup.sh script wrote, so flarewall can adopt them.
+// Detects rules that the old cf-security-setup.sh script wrote, so the security module can adopt them.
 // Core module: no Node-only API here, so a Worker can run it.
 
 /** Exact descriptions the old script gives its custom and rate limiting rules. */
@@ -27,7 +27,7 @@ export function isLegacyRule(rule: RuleIdentity): boolean {
   return LEGACY_DESCRIPTIONS.has(rule.description) || LEGACY_GEO_DESCRIPTION.test(rule.description);
 }
 
-/** The flarewall ref that takes the place of each legacy description. */
+/** The flarewall_ ref that takes the place of each legacy description. */
 const LEGACY_DESCRIPTION_TARGETS: ReadonlyMap<string, string> = new Map([
   ['Block non-standard ports', 'flarewall_ports'],
   ['Block scanner probes', 'flarewall_probes'],
@@ -35,13 +35,13 @@ const LEGACY_DESCRIPTION_TARGETS: ReadonlyMap<string, string> = new Map([
   ['Rate limit per IP', 'flarewall_rate_limit'],
 ]);
 
-/** The flarewall ref that takes the place of each legacy ref. */
+/** The flarewall_ ref that takes the place of each legacy ref. */
 const LEGACY_REF_TARGETS: ReadonlyMap<string, string> = new Map([
   ['cf_security_https', 'flarewall_https'],
   ['cf_security_canonical_host', 'flarewall_canonical_host'],
 ]);
 
-/** The ref of the flarewall rule that replaces a legacy rule, or undefined when the rule is not legacy. */
+/** The ref of the flarewall_ rule that replaces a legacy rule, or undefined when the rule is not legacy. */
 export function legacyTargetRef(rule: RuleIdentity): string | undefined {
   if (typeof rule.ref === 'string') {
     const target = LEGACY_REF_TARGETS.get(rule.ref);

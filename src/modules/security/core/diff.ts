@@ -9,7 +9,7 @@ export const OWNED_PREFIX = 'flarewall_';
 /** Every state a zone can show. diffZone returns only the last three. */
 export type ZoneState = 'error' | 'not managed' | 'legacy' | 'drift' | 'in sync';
 
-/** The live state flarewall reads for one zone: only the parts the desired state manages. */
+/** The live state flarealoy reads for one zone: only the parts the desired state manages. */
 export interface LiveZone {
   phases: Partial<Record<Phase, LiveRule[]>>;
   settings: Partial<Record<SettingId, unknown>>;
@@ -28,7 +28,7 @@ export type Change =
   | { kind: 'setting'; setting: SettingId; expected: unknown; actual: unknown }
   | { kind: 'bot_management'; expected: BotManagementState; actual: BotManagementState | undefined };
 
-/** A live rule flarewall does not own, kept apart from the changes. */
+/** A live rule flarealoy does not own, kept apart from the changes. */
 export interface ForeignRule {
   phase: Phase;
   id?: string;

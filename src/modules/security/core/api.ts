@@ -12,7 +12,7 @@ export interface ZoneSummary {
   plan: string;
 }
 
-/** A rule as Cloudflare returns it. Only the allowlisted fields matter to flarewall. */
+/** A rule as Cloudflare returns it. Only the allowlisted fields matter to flarealoy. */
 export interface LiveRule {
   id?: string;
   ref?: string;
@@ -25,10 +25,10 @@ export interface LiveRule {
   [field: string]: unknown;
 }
 
-/** The zone setting IDs flarewall reads and writes. */
+/** The zone setting IDs flarealoy reads and writes. */
 export type SettingId = 'always_use_https' | 'browser_check';
 
-/** Bot Fight Mode, as flarewall reads and writes it. */
+/** Bot Fight Mode, as flarealoy reads and writes it. */
 export interface BotManagementState {
   fight_mode?: boolean;
   enable_js?: boolean;

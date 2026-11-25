@@ -34,7 +34,7 @@ function stripErrors(text: string): string {
  * edited text, or undefined when the owner empties the file to cancel. The temp file is deleted.
  */
 export async function editText(text: string, validate: (text: string) => void, editor: Editor): Promise<string | undefined> {
-  const dir = await mkdtemp(join(tmpdir(), 'flarewall-edit-'));
+  const dir = await mkdtemp(join(tmpdir(), 'flarealoy-edit-'));
   const file = join(dir, 'document.yaml');
   try {
     let content = text;
