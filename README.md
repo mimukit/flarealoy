@@ -51,7 +51,7 @@ Put this shell function in the shell startup file (`~/.bashrc` or `~/.zshrc`) of
 
 ```sh
 flarealoy() {
-  ssh -t <host> "docker exec -it -e EDITOR \$(docker ps -qf label=com.docker.compose.service=flarealoy) flarealoy $(printf '%q ' "$@")"
+  ssh -t <host> "docker exec -it -e EDITOR \$(docker ps -qf label=com.docker.compose.service=flarealoy) flarealoy $([ $# -gt 0 ] && printf '%q ' "$@")"
 }
 ```
 
@@ -186,7 +186,7 @@ Run `flarealoy test-alert` after `flarealoy init` to send one test message.
 
 Flarealoy reads and writes one SQLite file. `FLAREALOY_DB` names it. The Docker image sets `FLAREALOY_DB=/data/flarealoy.sqlite`. With no value, the file is `$XDG_DATA_HOME/flarealoy/flarealoy.sqlite`, or `~/.local/share/flarealoy/flarealoy.sqlite` when `XDG_DATA_HOME` is not set. A local file is for development and tests only; keep your real data in the one file on the server.
 
-`FLAREWALL_DB`, `FLAREWALL_DATA` and `--data` are gone. Setting one of them stops the command.
+`FLAREWALL_DB` is gone: setting it stops every `flarealoy` command. `FLAREWALL_DATA` and `--data` are gone too: setting one of them stops every `flarealoy security` command.
 
 The file holds your private data, so Flarealoy creates it with mode `0600` in a directory with mode `0700`. Keep it out of every git repo; this repo's `.gitignore` lists `*.sqlite`.
 
