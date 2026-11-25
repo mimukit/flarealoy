@@ -112,7 +112,7 @@ export async function revertTo(store: DataStore, id: number, message?: string | 
 /** The text of a new inventory. The proxied hostnames go in as comments for the owner to sort. */
 export function newInventoryText(zone: string, zoneId: string, proxiedHosts: readonly string[]): string {
   const lines = [
-    `# Inventory for ${zone}, written by flarealoy security add.`,
+    `# Inventory for ${zone}, written by flarewall add.`,
     '# Put each host below in hosts.api or hosts.wordpress where it fits, then check redirects.',
     '# Proxied hostnames in this zone:',
     ...(proxiedHosts.length > 0 ? proxiedHosts.map((h) => `#   ${h}`) : ['#   (none)']),
