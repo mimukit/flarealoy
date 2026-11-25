@@ -37,6 +37,10 @@ Environment:
   CLOUDFLARE_WRITE_TOKEN  The write token; write commands need it
   FLAREALOY_HEARTBEAT_INTERVAL
                       The run interval of the core.heartbeat job: 15m, 24h, 1d, or off
+                      (default: 24h)
+  FLAREALOY_SECURITY_DIFF_INTERVAL
+                      The run interval of the security.diff job, which diffs every
+                      inventory zone and sends the drift alerts: 15m, 24h, 1d, or off
                       (default: 24h)`;
 
 const OLD_DB = 'FLAREWALL_DB is gone; flarealoy reads FLAREALOY_DB. To move old data: flarewall export <file>, then flarealoy import <file>';

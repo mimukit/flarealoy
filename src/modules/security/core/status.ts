@@ -1,6 +1,6 @@
 // Reads live state through CloudflareApi and reports a state for each zone.
 // Core module: no Node-only API here, so a Worker can run it.
-import type { CloudflareApi, SettingId } from './api.js';
+import type { CloudflareApi, SettingId, ZoneSummary } from './api.js';
 import { diffZone, type LiveZone, type ZoneDiff, type ZoneState } from './diff.js';
 import { PHASES, render, type DesiredZone } from './render.js';
 import type { Baseline, Inventory } from './schema.js';
@@ -52,16 +52,17 @@ function message(error: unknown): string {
  * (`not managed`). An error in one zone becomes that zone's `error` state; the other zones still
  * run. `only` narrows the report to the named zones; a named zone found nowhere is an `error`.
  * Rows are sorted by zone name. `options.onReport` is called once for each report as it is ready,
- * so a caller can draw each row before the last zone is read.
+ * so a caller can draw each row before the last zone is read. `options.visible` is a listZones
+ * result the caller already holds, so the zones are not listed twice.
  */
 export async function statusAll(
   api: CloudflareApi,
   baseline: Baseline,
   inventories: readonly Inventory[],
   only: readonly string[] = [],
-  options: { onReport?: (report: ZoneReport) => void } = {},
+  options: { onReport?: (report: ZoneReport) => void; visible?: readonly ZoneSummary[] } = {},
 ): Promise<ZoneReport[]> {
-  const visible = await api.listZones();
+  const visible = options.visible ?? (await api.listZones());
   const wanted = (name: string) => only.length === 0 || only.includes(name);
   const reports: ZoneReport[] = [];
   const push = (report: ZoneReport) => {

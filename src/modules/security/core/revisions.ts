@@ -130,7 +130,8 @@ export function newInventoryText(zone: string, zoneId: string, proxiedHosts: rea
 
 /**
  * Writes the first inventory revision for a zone the token can see, approved, by the owner.
- * Refuses when the zone is not visible or already has a current inventory.
+ * Refuses when the zone is not visible or already has a current inventory. Also writes the zone
+ * row of the core zones table (zone ID, name, account ID).
  */
 export async function addZoneInventory(api: CloudflareApi, store: DataStore, zoneName: string): Promise<Revision> {
   const zone = (await api.listZones()).find((z) => z.name === zoneName);
@@ -140,7 +141,9 @@ export async function addZoneInventory(api: CloudflareApi, store: DataStore, zon
   if (current !== undefined) throw new DataError(`${zone.name} already has inventory revision ${current.id}; flarealoy security add does not overwrite it`);
   const records = await api.listDnsRecords(zone.id);
   const hosts = [...new Set(records.filter((r) => r.proxied).map((r) => r.name))].sort();
-  return store.addRevision({ ...doc, status: 'approved', text: newInventoryText(zone.name, zone.id, hosts), author: 'owner', message: 'flarealoy security add' });
+  const revision = await store.addRevision({ ...doc, status: 'approved', text: newInventoryText(zone.name, zone.id, hosts), author: 'owner', message: 'flarealoy security add' });
+  await store.zones.put({ zoneId: zone.id, name: zone.name, accountId: zone.accountId });
+  return revision;
 }
 
 /** A BackupWriter that stores each backup as a row and returns `backup <id>`. */

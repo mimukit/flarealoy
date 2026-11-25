@@ -1,11 +1,14 @@
 // The job registry: every job `flarealoy run` runs, in registration order. A module adds its jobs
-// here (Phase 10 adds security.diff). Each job reads its interval from the environment.
+// here. Each job reads its interval from the environment.
 import type { DatabaseSync } from 'node:sqlite';
 import { parseInterval, type Job } from '../core/scheduler.js';
+import { securityJobs, type SecurityJobDeps } from '../modules/security/node/jobs.js';
 
 export interface JobContext {
   env: Record<string, string | undefined>;
   db: DatabaseSync;
+  /** Fakes for tests: the Cloudflare API factory, the alert channel and the clock. */
+  deps?: SecurityJobDeps;
 }
 
 /** The default heartbeat interval. */
@@ -23,5 +26,5 @@ function heartbeat(env: Record<string, string | undefined>): Job[] {
 
 /** Every registered job. Throws SchedulerError for a bad interval variable. */
 export function registeredJobs(context: JobContext): Job[] {
-  return [...heartbeat(context.env)];
+  return [...heartbeat(context.env), ...securityJobs(context.env, context.db, context.deps)];
 }

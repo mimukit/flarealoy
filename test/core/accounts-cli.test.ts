@@ -76,7 +76,7 @@ describe('flarealoy account', () => {
     ]);
 
     db = join(dir, 'second.sqlite');
-    expect(await cli('import', first)).toEqual({ code: 0, out: `imported 2 core_accounts, 0 revisions, 0 backups, 0 runs, 0 run_zones into ${db}`, err: '' });
+    expect(await cli('import', first)).toEqual({ code: 0, out: `imported 2 core_accounts, 0 core_zones, 0 revisions, 0 backups, 0 runs, 0 run_zones into ${db}`, err: '' });
     expect((await cli('account', 'list')).out).toBe(`${A}  free  CLOUDFLARE_API_TOKEN  Main\n${B}  paid  CLIENT_TOKEN  Client work`);
     const second = join(dir, 'second.json');
     expect((await cli('export', second)).code).toBe(0);

@@ -6,7 +6,7 @@ import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import { JOB_RUNS_SQL } from '../core/job-runs-sql.js';
 import { runScheduler, SchedulerError, type Job, type JobRun, type JobRunStore, type SchedulerClock, type SchedulerLog } from '../core/scheduler.js';
 import { StoreError } from '../core/store.js';
-import { registeredJobs } from './jobs.js';
+import { registeredJobs, type JobContext } from './jobs.js';
 import { openDatabase, resolveDbPath } from './sqlite-store.js';
 
 /** setTimeout holds at most this many milliseconds; a longer wait wakes early and the loop sleeps again. */
@@ -58,6 +58,8 @@ export interface ServiceOptions {
   clock?: SchedulerClock;
   /** Extra jobs after the registered ones, for tests. */
   extraJobs?: (db: DatabaseSync) => Job[];
+  /** Fakes the registered jobs use, for tests. */
+  jobDeps?: JobContext['deps'];
 }
 
 /** Turns SIGTERM and SIGINT into an abort, and logs the signal once. */
@@ -65,7 +67,7 @@ function stopOnSignals(log: SchedulerLog): { signal: AbortSignal; release: () =>
   const controller = new AbortController();
   const onSignal = (name: NodeJS.Signals) => {
     if (controller.signal.aborted) return;
-    log.out(`${new Date().toISOString()} flarealoy run: ${name}, stopping after the current job`);
+    log.out(`${new Date().toISOString()} flarealoy run: ${name}, stopping; a running job gets 5s to finish`);
     controller.abort();
   };
   process.on('SIGTERM', onSignal);
@@ -91,7 +93,7 @@ export async function runService(env: Record<string, string | undefined>, log: S
   }
   const stop = options.signal === undefined ? stopOnSignals(log) : { signal: options.signal, release: () => {} };
   try {
-    const jobs = [...registeredJobs({ env, db }), ...(options.extraJobs?.(db) ?? [])];
+    const jobs = [...registeredJobs({ env, db, ...(options.jobDeps === undefined ? {} : { deps: options.jobDeps }) }), ...(options.extraJobs?.(db) ?? [])];
     await runScheduler(jobs, { clock: options.clock ?? realClock, store: sqliteJobRuns(db), log, signal: stop.signal });
     return 0;
   } catch (error) {

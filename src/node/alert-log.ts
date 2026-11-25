@@ -6,8 +6,10 @@ import type { AlertLog, SentAlert, Severity } from '../core/notifier.js';
 type Row = Record<string, SQLInputValue>;
 
 export interface SqliteAlertLog extends AlertLog {
-  claim(alert: SentAlert): boolean;
+  has(dedupeKey: string): boolean;
+  record(alert: SentAlert): void;
   release(dedupeKey: string): void;
+  keys(prefix: string): string[];
   /** Every sent alert, oldest first. */
   list(): SentAlert[];
 }
@@ -15,7 +17,11 @@ export interface SqliteAlertLog extends AlertLog {
 /** The alert log on an open database. The caller owns the handle and closes it. */
 export function sqliteAlertLog(db: DatabaseSync): SqliteAlertLog {
   return {
-    claim: (alert) => Number(db.prepare(ALERTS_SQL.claim).run(alert.dedupeKey, alert.title, alert.severity, alert.sentAt).changes) === 1,
+    has: (dedupeKey) => db.prepare(ALERTS_SQL.has).get(dedupeKey) !== undefined,
+    record: (alert) => {
+      db.prepare(ALERTS_SQL.record).run(alert.dedupeKey, alert.title, alert.severity, alert.sentAt);
+    },
+    keys: (prefix) => (db.prepare(ALERTS_SQL.keys).all(prefix) as Row[]).map((row) => row.dedupe_key as string),
     release: (dedupeKey) => {
       db.prepare(ALERTS_SQL.release).run(dedupeKey);
     },
