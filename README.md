@@ -30,15 +30,15 @@ To deploy with [Dokploy](https://dokploy.com):
 1. Create a Dokploy compose app from this repo, with `compose.example.yaml` as the compose file. Dokploy builds the image; there is no image registry.
 2. Set the environment values in Dokploy: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_WRITE_TOKEN`, and the ntfy variables from [Alerts](#alerts). Never write a token into the compose file.
 3. Add a Dokploy volume backup for the `flarealoy-data` volume. Flarealoy does not copy the database file itself.
-4. Deploy. The service runs every job on its interval and logs one line for each run. It stops cleanly on SIGTERM.
+4. Deploy. The service creates `/data/flarealoy.sqlite`, runs every job on its interval and logs one line for each run. It stops cleanly on SIGTERM. Until the database holds a baseline, each `security.diff` run logs an error line; this stops after step 6 or step 8.
 5. Add the [shell function](#run-commands-over-ssh) on each machine you work from.
-6. Run `flarealoy init` once through the shell function. It creates `/data/flarealoy.sqlite`. To bring flarewall data, do [the data move](#move-your-flarewall-data) now, before the next steps.
+6. Run `flarealoy init` once through the shell function. It checks the database and prints `database ready`. To bring flarewall data, do [the data move](#move-your-flarewall-data) now, before the next steps.
 7. Run `flarealoy test-alert` to check the alert channel.
-8. Run `flarealoy security init` to write the default baseline, then `flarealoy security add <zone>` for each zone. Set the host roles with `flarealoy security edit <zone>` before you apply.
+8. When you did the data move, skip `flarealoy security init`: the import brought your baseline, and `security init` refuses a database that holds one. Otherwise run `flarealoy security init` to write the default baseline. Then run `flarealoy security add <zone>` for each new zone. Set the host roles with `flarealoy security edit <zone>` before you apply.
 
 The service and every `docker exec` command share the one file in the one container. A command waits up to 5 seconds for a lock, and the service writes once per job run, so lock waits are short.
 
-These variables set the job intervals. Each takes a value such as `15m`, `24h` or `1d`, or `off` to drop the job:
+These variables set the job intervals. Each takes a value such as `15m`, `24h` or `1d`, or `off` to drop the job. Set them as environment values in Dokploy; `compose.example.yaml` passes them to the container. A variable that is not in the compose `environment:` block never reaches the container.
 
 | Variable | Job | Default |
 |----------|-----|---------|
@@ -77,7 +77,7 @@ Flarealoy does not open the flarewall database file. It loads a flarewall export
 4. Check the result: `flarealoy security log` lists the same revision ids as `flarewall log` did, and `flarealoy security backups <zone>` lists the same backup ids.
 5. Delete `old.json`. It holds your private data.
 
-`import` loads into an empty database only and never merges. When an import fails, remove `/data/flarealoy.sqlite`, then run `flarealoy init` and the import again. The old flarewall file stays as it was, so you can go back to the `flarewall-v0.1.0` build at any time.
+`import` loads into an empty database only and never merges. An import runs in one transaction, so a failed import leaves the database empty: fix the cause and run the import again. The old flarewall file stays as it was, so you can go back to the `flarewall-v0.1.0` build at any time.
 
 ## Commands
 
@@ -86,7 +86,7 @@ Top-level commands:
 | Command | What it does |
 |---------|--------------|
 | `flarealoy init` | Creates the database file when it is missing and runs every module migration. |
-| `flarealoy account add <account-id> --label <text> --plan free\|paid [--token-env <NAME>]` | Adds a Cloudflare account. `--token-env` names the variable that holds the read token of this account. |
+| `flarealoy account add <account-id> --label <text> --plan free\|paid [--token-env <NAME>]` | Adds a Cloudflare account. `--token-env` names the variable that holds the read token of this account; see [Tokens](#tokens). |
 | `flarealoy account list` | Prints one line per account: ID, plan, token variable and label. |
 | `flarealoy account set <account-id> [--label <text>] [--plan free\|paid] [--token-env <NAME>]` | Changes an account. `--token-env CLOUDFLARE_API_TOKEN` goes back to the default. |
 | `flarealoy account remove <account-id>` | Removes an account. |
@@ -155,7 +155,7 @@ Flarealoy reads Cloudflare API tokens from environment variables only, and never
 |----------|---------|
 | `CLOUDFLARE_API_TOKEN` | The read token: `security add`, `status`, `diff`, the dry runs of `apply` and `restore`, the TUI, and the `security.diff` job. When only `CLOUDFLARE_WRITE_TOKEN` is set, reads use that one. |
 | `CLOUDFLARE_WRITE_TOKEN` | The write token: `security apply --write`, `security restore --write`, and the TUI write keys. Without it they refuse, for example with `security apply --write needs CLOUDFLARE_WRITE_TOKEN`. |
-| The variable an account names with `--token-env` | The read token for that account, when the main read token cannot see it. Flarealoy stores the variable name, never the token. |
+| The variable an account names with `--token-env` | The read token for that account, when the main read token cannot see it. Flarealoy stores the variable name, never the token. No command reads it yet: the security commands and the `security.diff` job use `CLOUDFLARE_API_TOKEN`. On the server, the variable also reaches the container only when you add it to the compose `environment:` block. |
 
 On the server, set both tokens as environment values in Dokploy. Make each one a user token scoped to the zones you manage:
 
