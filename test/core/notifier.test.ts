@@ -57,16 +57,6 @@ describe('sendAlert', () => {
     expect(await sendAlert(fake, log, drift, NOW)).toBe('sent');
     expect(fake.sent).toEqual([drift]);
   });
-});
-
-describe('testAlert', () => {
-  it('is an info message whose dedupe key holds the time', () => {
-    const message = testAlert(NOW);
-    expect(message.severity).toBe('info');
-    expect(message.title).toBe('flarealoy test alert');
-    expect(message.dedupeKey).toBe('test-alert:2026-11-25T10:00:00.000Z');
-    expect(message.body).toContain('2026-11-25T10:00:00.000Z');
-  });
 
   it('records the key only after the send succeeds, so a stop mid-send loses no alert', async () => {
     const log = sqliteAlertLog(db);
@@ -89,6 +79,16 @@ describe('testAlert', () => {
     finish();
     expect(await pending).toBe('sent');
     expect(log.has(drift.dedupeKey)).toBe(true);
+  });
+});
+
+describe('testAlert', () => {
+  it('is an info message whose dedupe key holds the time', () => {
+    const message = testAlert(NOW);
+    expect(message.severity).toBe('info');
+    expect(message.title).toBe('flarealoy test alert');
+    expect(message.dedupeKey).toBe('test-alert:2026-11-25T10:00:00.000Z');
+    expect(message.body).toContain('2026-11-25T10:00:00.000Z');
   });
 });
 
