@@ -5,11 +5,14 @@
 import type { CloudflareApi } from '../core/api.js';
 import { applyInventoryZone, type BackupWriter } from '../core/apply.js';
 import { statusAll } from '../core/status.js';
-import type { TuiData } from './state.js';
+import { WRITE_TOKEN_NEEDED, type TuiData } from './state.js';
 import type { EffectRunner } from './store.js';
 
 export interface RunnerDeps {
+  /** The client on the read token: loads, refreshes and dry runs. */
   api: CloudflareApi;
+  /** The client on CLOUDFLARE_WRITE_TOKEN; absent when that variable is not set. Writes use only this one. */
+  writeApi?: CloudflareApi;
   /** Reads the current baseline and inventory revisions. Its error message names the revision. */
   load: () => Promise<TuiData>;
   /** Stores the backup before a write: the same writer as `flarewall apply --write`. */
@@ -66,6 +69,11 @@ export function createRunner(deps: RunnerDeps): EffectRunner {
       }
       case 'apply-zone': {
         const { zone, write, data } = effect;
+        const api = write ? deps.writeApi : deps.api;
+        if (api === undefined) {
+          dispatch({ type: 'zone-failed', zone, error: WRITE_TOKEN_NEEDED });
+          return;
+        }
         const inventory = data.inventories.find((i) => i.zone === zone);
         if (inventory === undefined) {
           dispatch({ type: 'zone-failed', zone, error: `no inventory entry; run flarealoy security add ${zone}` });
@@ -81,7 +89,7 @@ export function createRunner(deps: RunnerDeps): EffectRunner {
             pendingAnswer = resolve;
             dispatch({ type: 'confirm-asked', zone });
           });
-        void applyInventoryZone(deps.api, data.baseline, inventory, {
+        void applyInventoryZone(api, data.baseline, inventory, {
           write,
           backup,
           onPlan: (plan) => dispatch({ type: 'plan-ready', zone, plan }),

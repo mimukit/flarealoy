@@ -8,6 +8,7 @@ import {
   CARD_LABEL_WIDTH,
   canAdd,
   canRun,
+  WRITE_TOKEN_NEEDED,
   columnWidths,
   confirmPrompt,
   diffPaneLines,
@@ -308,10 +309,11 @@ function HintLine({ state }: { state: TuiState }) {
       )}
       {hintBindings(hintScopes(state)).map((b, i) => {
         // The key in the accent colour, then its action in plain text. A typed-text hint has no key.
-        const hint = b.hint as string;
+        // With no write token, the write key names the missing variable.
+        const hint = !state.canWrite && b.action === 'apply' ? `${b.hint as string}: ${WRITE_TOKEN_NEEDED}` : (b.hint as string);
         const space = hint.indexOf(' ');
         const keys = b.keys.length === 0 || space === -1 ? '' : hint.slice(0, space);
-        const dim = (idle && (b.action === 'dry-run' || b.action === 'apply')) || (addIdle && b.action === 'add');
+        const dim = (idle && (b.action === 'dry-run' || b.action === 'apply')) || (addIdle && b.action === 'add') || (!state.canWrite && b.action === 'apply');
         return (
           <Text key={`${b.scope} ${b.action}`} color={dim ? THEME.idle : THEME.hint}>
             {i === 0 ? '' : '  '}

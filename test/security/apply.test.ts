@@ -59,7 +59,7 @@ const cli = async (...argv: string[]) => {
       return answers.shift() ?? false;
     },
   };
-  const code = await run(argv, { CLOUDFLARE_API_TOKEN: 'test-token' }, { out: (l) => out.push(l), err: (l) => err.push(l) }, deps);
+  const code = await run(argv, { CLOUDFLARE_API_TOKEN: 'test-token', CLOUDFLARE_WRITE_TOKEN: 'write-token' }, { out: (l) => out.push(l), err: (l) => err.push(l) }, deps);
   return { code, out: out.join('\n'), err: err.join('\n') };
 };
 

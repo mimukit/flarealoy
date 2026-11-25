@@ -7,7 +7,11 @@ import type { ZoneSummary } from '../core/api.js';
 import type { ZoneState } from '../core/diff.js';
 import type { Baseline, Inventory } from '../core/schema.js';
 import type { ZoneReport } from '../core/status.js';
+import { WRITE_TOKEN } from '../../../core/tokens.js';
 import { isPrefix, lookup, type Action, type Scope } from './keymap.js';
+
+/** What the write key shows when CLOUDFLARE_WRITE_TOKEN is not set. */
+export const WRITE_TOKEN_NEEDED = `needs ${WRITE_TOKEN}`;
 
 export type Focus = 'zones' | 'diff';
 
@@ -95,6 +99,8 @@ export interface TuiState {
   adding?: { zones: string[]; lines: Record<string, string[]>; quit: boolean };
   /** True once a write in this session failed; the TUI then exits 2. */
   writeFailed: boolean;
+  /** True when CLOUDFLARE_WRITE_TOKEN is set. Without it, the write key `a` only shows the missing-token message. */
+  canWrite: boolean;
 }
 
 /**
@@ -135,9 +141,11 @@ export interface Update {
   effects: Effect[];
 }
 
-export function initialState(options: { dbPath: string; columns: number; rows: number }): TuiState {
+export function initialState(options: { dbPath: string; columns: number; rows: number; canWrite?: boolean }): TuiState {
+  const { canWrite = true, ...rest } = options;
   return {
-    ...options,
+    ...rest,
+    canWrite,
     gen: 0,
     zones: [],
     listTop: 0,
@@ -630,6 +638,12 @@ function startRun(state: TuiState, write: boolean): Update {
   return advance({ ...state, focus }, { write, zones, index: 0, stop: false, quit: false }, []);
 }
 
+/** The write key with no write token: each target zone shows the missing-token line, and nothing runs. */
+function writeTokenNeeded(state: TuiState): TuiState {
+  if (state.mode.kind !== 'normal') return state;
+  return runTargets(state).reduce((next, zone) => setLines(next, zone, [`${zone}: ${WRITE_TOKEN_NEEDED}`]), state);
+}
+
 /** Answers the open prompt. `stop` skips the zones after this one; `quit` also quits after it. */
 function answer(state: TuiState, yes: boolean, stop: boolean, quit: boolean): Update {
   const run = state.run;
@@ -750,7 +764,7 @@ function act(state: TuiState, action: Action): Update {
     case 'dry-run':
       return startRun(state, false);
     case 'apply':
-      return startRun(state, true);
+      return state.canWrite ? startRun(state, true) : none(writeTokenNeeded(state));
     case 'confirm-yes':
       return answer(state, true, false, false);
     case 'confirm-no':

@@ -13,6 +13,7 @@ const USAGE = `Usage: flarealoy <module> <command> [options]
 
 Commands:
   init                Create the database when missing and run every module migration
+  account <command>   Add, list, change and remove the Cloudflare accounts
   export <file>       Write every table of every module to one new JSON file
   import <file|->     Load an export file (or stdin for -) into an empty database;
                       a flarewall export loads too
@@ -30,7 +31,9 @@ Environment:
   FLAREALOY_DB        The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                       or ~/.local/share/flarealoy/flarealoy.sqlite)
   FLAREALOY_NTFY_TOPIC, FLAREALOY_NTFY_URL, FLAREALOY_NTFY_TOKEN
-                      The ntfy alert channel; see flarealoy test-alert --help`;
+                      The ntfy alert channel; see flarealoy test-alert --help
+  CLOUDFLARE_API_TOKEN    The read token (CLOUDFLARE_WRITE_TOKEN when only that one is set)
+  CLOUDFLARE_WRITE_TOKEN  The write token; write commands need it`;
 
 const OLD_DB = 'FLAREWALL_DB is gone; flarealoy reads FLAREALOY_DB. To move old data: flarewall export <file>, then flarealoy import <file>';
 
@@ -57,6 +60,10 @@ export async function run(
   switch (name) {
     case 'security':
       return runSecurity(rest, env, io, deps);
+    case 'account': {
+      const { runAccount } = await import('./account.js');
+      return runAccount(rest, env, io);
+    }
     case 'init':
     case 'export':
     case 'import':

@@ -4,6 +4,7 @@
 // positional (`?`).
 // Core module: no Node-only API here, so a Worker can run it.
 import { CORE_ALERTS_MIGRATION } from './alerts-sql.js';
+import { ACCOUNTS_MIGRATION } from './accounts.js';
 
 /** The name of the platform core in the meta keys and in the export's schema_versions. */
 export const CORE = 'core';
@@ -35,6 +36,8 @@ UPDATE meta SET key = 'schema_version.security' WHERE key = 'schema_version';
 `,
   // 2: the sent alert keys of the notifier (src/core/notifier.ts).
   CORE_ALERTS_MIGRATION,
+  // 3: core_accounts (issue #12).
+  ACCOUNTS_MIGRATION,
 ];
 
 export const CORE_SQL = {

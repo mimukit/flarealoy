@@ -8,6 +8,7 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { CORE, CORE_MIGRATIONS, CORE_SQL, LEGACY_VERSION_KEY, LEGACY_VERSION_MODULE, versionKey } from '../core/store-sql.js';
+import { withCore } from '../core/core-module.js';
 import { StoreError, type DatabaseExport, type ExportRow, type StoreModule } from '../core/store.js';
 import { MODULES } from './modules.js';
 
@@ -135,16 +136,16 @@ function migrate(db: DatabaseSync, modules: readonly StoreModule[]): void {
   for (const step of order) migrateOne(db, step.name, step.migrations);
 }
 
-/** True when every table of every module has zero rows. */
+/** True when every table of the core and of every module has zero rows. */
 export function isEmpty(db: DatabaseSync, modules: readonly StoreModule[] = MODULES): boolean {
-  return modules.every((m) => Object.keys(m.tables).every((table) => (db.prepare(CORE_SQL.countRows(table)).get() as Row).n === 0));
+  return withCore(modules).every((m) => Object.keys(m.tables).every((table) => (db.prepare(CORE_SQL.countRows(table)).get() as Row).n === 0));
 }
 
-/** Every table of every module, with the schema version of the core and of each module. */
+/** Every table of the core and of every module, with the schema version of the core and of each module. */
 export function exportDatabase(db: DatabaseSync, modules: readonly StoreModule[] = MODULES): DatabaseExport {
   const versions: Record<string, number> = { [CORE]: readVersion(db, CORE) };
   const tables: Record<string, ExportRow[]> = {};
-  for (const module of modules) {
+  for (const module of withCore(modules)) {
     versions[module.name] = readVersion(db, module.name);
     for (const [name, table] of Object.entries(module.tables)) {
       // Build each row in column order, so the export has a fixed key order.
@@ -168,7 +169,7 @@ export function importDatabase(db: DatabaseSync, data: DatabaseExport, location:
       if (version !== latest) throw new StoreError(`the export has ${name} schema version ${version}, but this flarealoy writes ${latest ?? 'no such module'}`);
     }
     if (!isEmpty(db, modules)) throw new StoreError(`${location} is not empty; flarealoy import loads into an empty database only`);
-    for (const module of modules) {
+    for (const module of withCore(modules)) {
       for (const [name, table] of Object.entries(module.tables)) {
         const insert = db.prepare(CORE_SQL.importRow(name, table.columns));
         for (const row of data.tables[name] ?? []) insert.run(...table.columns.map((column) => (row[column] ?? null) as SQLInputValue));

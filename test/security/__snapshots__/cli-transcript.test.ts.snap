@@ -385,27 +385,27 @@ exports[`global error paths > no token for every command that needs one 1`] = `
 {
   "add example.com": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "apply example.com": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "diff": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "status": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "tui": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
 }
@@ -739,7 +739,7 @@ exports[`restore and backups > error paths 1`] = `
   },
   "noToken": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "noTty": {
@@ -842,7 +842,7 @@ exports[`tui > error paths only 1`] = `
   },
   "noToken": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from CLOUDFLARE_API_TOKEN or CLOUDFLARE_WRITE_TOKEN only",
     "out": "",
   },
   "noTty": {
@@ -892,7 +892,9 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
@@ -939,7 +941,9 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
@@ -985,7 +989,9 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
@@ -1033,7 +1039,9 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
@@ -1081,11 +1089,97 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
 Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
   "out": "",
+}
+`;
+
+exports[`write token > apply --write and restore --write refuse without CLOUDFLARE_WRITE_TOKEN, before any call 1`] = `
+{
+  "apply": {
+    "code": 2,
+    "err": "security apply --write needs CLOUDFLARE_WRITE_TOKEN",
+    "out": "",
+  },
+  "applyAll": {
+    "code": 2,
+    "err": "security apply --write needs CLOUDFLARE_WRITE_TOKEN",
+    "out": "",
+  },
+  "restore": {
+    "code": 2,
+    "err": "security restore --write needs CLOUDFLARE_WRITE_TOKEN",
+    "out": "",
+  },
+  "tokens": [],
+  "writes": 0,
+}
+`;
+
+exports[`write token > apply --write runs the write path on CLOUDFLARE_WRITE_TOKEN; a dry run uses the read token 1`] = `
+{
+  "dry": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: dry run, nothing sent; pass --write to send",
+  },
+  "tokens": [
+    "test-token",
+    "write-token",
+  ],
+  "writes": 6,
+  "written": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: backup 1 saved
+example.com: applied, read-back in sync",
+  },
+}
+`;
+
+exports[`write token > status runs with only CLOUDFLARE_WRITE_TOKEN 1`] = `
+{
+  "status": {
+    "code": 1,
+    "err": "",
+    "out": "ZONE         PLAN          STATE
+example.com  Free Website  drift
+example.net  Free Website  in sync",
+  },
+  "tokens": [
+    "write-token",
+  ],
 }
 `;
