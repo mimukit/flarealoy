@@ -2,6 +2,9 @@
 *.sqlite
 *.sqlite-*
 .env*
+**/*.sqlite
+**/*.sqlite-*
+**/.env*
 # Built inside the image.
 node_modules
 dist
