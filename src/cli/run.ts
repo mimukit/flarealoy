@@ -1,10 +1,12 @@
 // The flarealoy command line: the platform dispatcher. It stops on the old FLAREWALL_DB variable,
-// prints the top-level usage, runs the platform data commands (init, export, import), and passes
+// prints the top-level usage, runs the platform data commands (init, export, import) and
+// test-alert, and passes
 // the rest of argv to a module's run().
 import { exportText, parseExport, StoreError } from '../core/store.js';
 import { run as runSecurity, type Io, type RunDeps } from '../modules/security/cli/run.js';
+import { runTestAlert, type TestAlertDeps } from './test-alert.js';
 
-export type { Io, RunDeps };
+export type { Io, RunDeps, TestAlertDeps };
 
 const USAGE = `Usage: flarealoy <module> <command> [options]
        flarealoy <command> [options]
@@ -14,6 +16,7 @@ Commands:
   export <file>       Write every table of every module to one new JSON file
   import <file|->     Load an export file (or stdin for -) into an empty database;
                       a flarewall export loads too
+  test-alert          Send one test alert through the configured alert channel
 
 Modules:
   security <command>  Keep the Cloudflare zones on one security baseline
@@ -25,7 +28,9 @@ Options:
 
 Environment:
   FLAREALOY_DB        The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
-                      or ~/.local/share/flarealoy/flarealoy.sqlite)`;
+                      or ~/.local/share/flarealoy/flarealoy.sqlite)
+  FLAREALOY_NTFY_TOPIC, FLAREALOY_NTFY_URL, FLAREALOY_NTFY_TOKEN
+                      The ntfy alert channel; see flarealoy test-alert --help`;
 
 const OLD_DB = 'FLAREWALL_DB is gone; flarealoy reads FLAREALOY_DB. To move old data: flarewall export <file>, then flarealoy import <file>';
 
@@ -34,7 +39,7 @@ export async function run(
   argv: string[],
   env: Record<string, string | undefined>,
   io: Io,
-  deps: RunDeps = {},
+  deps: RunDeps & TestAlertDeps = {},
 ): Promise<number> {
   const [name, ...rest] = argv;
   if (name === '--help' || name === '-h') {
@@ -56,6 +61,8 @@ export async function run(
     case 'export':
     case 'import':
       return runData(name, rest, env, io, deps);
+    case 'test-alert':
+      return runTestAlert(rest, env, io, deps);
     default:
       io.err(`unknown command: ${name}`);
       io.err(USAGE);
