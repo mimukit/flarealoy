@@ -206,7 +206,7 @@ describe('status and diff', () => {
     const diff = await cli(['diff']);
     const noRecord = await cli(['diff', '--no-record']);
     const inSync = await cli(['diff', 'example.net']);
-    const runs = (await store.exportData()).runs.length;
+    const runs = (await store.listRuns()).length;
     expect({ diff, noRecord, inSync, runs }).toMatchSnapshot();
   });
 });

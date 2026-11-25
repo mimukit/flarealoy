@@ -1,13 +1,14 @@
-// The SQLite data store: append-only revisions, the current revision, the stale-proposal refusal,
-// the schema version, backups, runs, export and import, and the file mode.
+// The security SQLite data store: append-only revisions, the current revision, the stale-proposal
+// refusal, the schema version, backups, runs, and the file mode. Export and import of every table
+// moved to the platform store (test/core/store.test.ts).
 import { mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { SCHEMA_VERSION } from '../../src/modules/security/core/store-sql.js';
-import { exportText, parseExport, type DataStore, type DocRef } from '../../src/modules/security/core/store.js';
-import { MEMORY, openSqliteStore, resolveDbPath, sha256 } from '../../src/modules/security/node/sqlite-store.js';
+import type { DataStore, DocRef } from '../../src/modules/security/core/store.js';
+import { MEMORY, openSqliteStore, sha256 } from '../../src/modules/security/node/sqlite-store.js';
 
 const BASELINE: DocRef = { kind: 'baseline', zone: null };
 const COM: DocRef = { kind: 'inventory', zone: 'example.com' };
@@ -150,8 +151,8 @@ describe('the file', () => {
     const path = join(dir, 'f.sqlite');
     openSqliteStore(path, { create: true }).close();
     const raw = new DatabaseSync(path);
-    expect(raw.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get()).toEqual({ value: String(SCHEMA_VERSION) });
-    raw.exec(`UPDATE meta SET value = '${SCHEMA_VERSION + 1}' WHERE key = 'schema_version'`);
+    expect(raw.prepare(`SELECT value FROM meta WHERE key = 'schema_version.security'`).get()).toEqual({ value: String(SCHEMA_VERSION) });
+    raw.exec(`UPDATE meta SET value = '${SCHEMA_VERSION + 1}' WHERE key = 'schema_version.security'`);
     raw.close();
     expect(() => openSqliteStore(path)).toThrow('the database schema is newer than this flarealoy; upgrade flarealoy');
   });
@@ -160,37 +161,7 @@ describe('the file', () => {
     const path = join(dir, 'old.sqlite');
     writeFileSync(path, '');
     const db = openSqliteStore(path);
-    expect(await db.isEmpty()).toBe(true);
+    expect(await db.listRevisions()).toEqual([]);
     db.close();
-  });
-
-  it('resolves the path from FLAREALOY_DB, then XDG_DATA_HOME, then HOME', () => {
-    expect(resolveDbPath({ FLAREALOY_DB: '/x/y.sqlite', XDG_DATA_HOME: '/d' })).toBe('/x/y.sqlite');
-    expect(resolveDbPath({ XDG_DATA_HOME: '/d', HOME: '/h' })).toBe('/d/flarealoy/flarealoy.sqlite');
-    expect(resolveDbPath({ HOME: '/h' })).toBe('/h/.local/share/flarealoy/flarealoy.sqlite');
-  });
-});
-
-describe('export and import', () => {
-  it('round-trips every table byte for byte, keeping ids and timestamps', async () => {
-    await store.addRevision({ ...BASELINE, status: 'approved', text: 'base\n', author: 'owner' });
-    await store.addRevision({ ...COM, status: 'approved', text: 'a\n', author: 'owner' });
-    const p = await store.addRevision({ ...COM, status: 'pending', text: 'b\n', author: 'skill', message: 'tighten' });
-    await store.decide(p.id, 'rejected');
-    await store.addBackup('example.com', 'zone-id', '{"phases":{},"settings":{}}');
-    await store.addRun([{ zone: 'example.com', state: 'in sync', changes: 0, error: null }]);
-    const text = exportText(await store.exportData());
-
-    const copy = openSqliteStore(join(dir, 'copy.sqlite'), { create: true });
-    await copy.importData(parseExport(text));
-    expect(exportText(await copy.exportData())).toBe(text);
-    await expect(copy.importData(parseExport(text))).rejects.toThrow(/not empty/);
-    copy.close();
-    expect(Object.keys(JSON.parse(text))).toEqual(['flarewall_export', 'schema_version', 'revisions', 'backups', 'runs', 'run_zones']);
-  });
-
-  it('rejects a file that is not an export', () => {
-    expect(() => parseExport('{')).toThrow(/not valid JSON/);
-    expect(() => parseExport('{"flarewall_export": 1}')).toThrow(/not a flarealoy export/);
   });
 });

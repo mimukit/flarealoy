@@ -1,4 +1,5 @@
-// The revision commands: edit, propose, log, show, revert, approve, reject, export, and import.
+// The revision commands: edit, propose, log, show, revert, approve, and reject. Export and import
+// moved to the top level (test/core/data-cli.test.ts).
 import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7,7 +8,7 @@ import { run, type RunDeps } from '../../src/modules/security/cli/run.js';
 import { textDiff } from '../../src/modules/security/core/revisions.js';
 import type { DataStore } from '../../src/modules/security/core/store.js';
 import type { Editor } from '../../src/modules/security/node/edit.js';
-import { isSqliteWarning } from '../../src/modules/security/node/warnings.js';
+import { isSqliteWarning } from '../../src/node/warnings.js';
 import { memoryStore, putBaseline, putInventory } from './helpers.js';
 
 const ID = '023e105f4ecef8ad9ca31a8372d0c353';
@@ -165,30 +166,6 @@ describe('log, show, and revert', () => {
     stdin = COM_API;
     await cli(['propose', 'example.com', '-']);
     expect((await cli(['revert', '3'])).err).toBe('revision 3 is pending; only an approved revision can be restored');
-  });
-});
-
-describe('export and import', () => {
-  it('export then import into a new file gives a byte-identical export', async () => {
-    stdin = COM_API;
-    await cli(['propose', 'example.com', '-']);
-    await store.addBackup('example.com', ID, '{"phases":{},"settings":{"always_use_https":"off"}}');
-    await store.addRun([{ zone: 'example.com', state: 'drift', changes: 1, error: null }]);
-    const first = join(dir, 'first.json');
-    expect((await cli(['export', first])).code).toBe(0);
-    expect(statSync(first).mode & 0o777).toBe(0o600);
-    expect((await cli(['export', first])).err).toBe(`${first} already exists; flarealoy security export does not overwrite it`);
-
-    const db = join(dir, 'copy.sqlite');
-    const imported = await run(['import', first], { FLAREALOY_DB: db }, { out: () => {}, err: () => {} });
-    expect(imported).toBe(0);
-    const second = join(dir, 'second.json');
-    expect(await run(['export', second], { FLAREALOY_DB: db }, { out: () => {}, err: () => {} })).toBe(0);
-    expect(readFileSync(second, 'utf8')).toBe(readFileSync(first, 'utf8'));
-
-    const err: string[] = [];
-    expect(await run(['import', first], { FLAREALOY_DB: db }, { out: () => {}, err: (l) => err.push(l) })).toBe(2);
-    expect(err).toEqual([`${db} is not empty; flarealoy security import loads into an empty database only`]);
   });
 });
 

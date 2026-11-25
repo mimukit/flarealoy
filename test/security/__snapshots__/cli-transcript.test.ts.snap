@@ -237,22 +237,22 @@ exports[`export and import > error paths 1`] = `
 {
   "exportArgs": {
     "code": 2,
-    "err": "export takes one file name",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
   "importArgs": {
     "code": 2,
-    "err": "import takes one file name",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
   "importBad": {
     "code": 2,
-    "err": "not a flarealoy export: flarewall_export: Invalid input: expected 1",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
   "importMissing": {
     "code": 2,
-    "err": "error: ENOENT: no such file or directory, open '<dir>/nope.json'",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
 }
@@ -262,29 +262,27 @@ exports[`export and import > export, then import into a new file, then refuse a 
 {
   "again": {
     "code": 2,
-    "err": "<dir>/export.json already exists; flarealoy security export does not overwrite it",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
   "exported": {
-    "code": 0,
-    "err": "",
-    "out": "exported :memory: to <dir>/export.json",
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
   },
   "imported": {
-    "code": 0,
-    "err": "",
-    "out": "imported 3 revisions, 1 backups, and 1 runs into <dir>/copy.sqlite",
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
   },
   "log": {
-    "code": 0,
-    "err": "",
-    "out": "#1  2026-10-22T09:00:00.000Z  baseline  approved  owner
-#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
-#3  2026-10-22T09:00:02.000Z  example.net inventory  approved  owner",
+    "code": 2,
+    "err": "no flarealoy database at <dir>/copy.sqlite; run flarealoy security init",
+    "out": "",
   },
   "second": {
     "code": 2,
-    "err": "<dir>/copy.sqlite is not empty; flarealoy security import loads into an empty database only",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
 }
@@ -340,7 +338,7 @@ exports[`global error paths > no database for every command that opens one 1`] =
   },
   "export <dir>/out.json": {
     "code": 2,
-    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "err": "moved: run flarealoy export",
     "out": "",
   },
   "log": {
@@ -878,8 +876,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone
@@ -927,8 +923,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone
@@ -975,8 +969,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone
@@ -1025,8 +1017,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone
@@ -1075,8 +1065,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone

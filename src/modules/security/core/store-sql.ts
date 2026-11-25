@@ -1,6 +1,7 @@
-// The schema, the migrations, and every query of the data store, in the SQLite dialect. The Node
-// adapter (src/node/sqlite-store.ts) runs them on node:sqlite; a later D1 adapter can run the same
-// text. Parameters are positional (`?`).
+// The schema, the migrations, and every query of the security data store, in the SQLite dialect.
+// The Node adapter (src/modules/security/node/sqlite-store.ts) runs them on node:sqlite; a later
+// D1 adapter can run the same text. The meta table queries and the generic export queries live in
+// the platform store (src/core/store-sql.ts). Parameters are positional (`?`).
 // Core module: no Node-only API here, so a Worker can run it.
 
 /**
@@ -93,7 +94,7 @@ END;
 `,
 ];
 
-/** The schema version this flarewall writes. */
+/** The security schema version this flarealoy writes. */
 export const SCHEMA_VERSION = MIGRATIONS.length;
 
 /** The tables in export order, each with its columns in export order. */
@@ -104,16 +105,9 @@ export const EXPORT_TABLES = {
   run_zones: ['id', 'run_id', 'zone', 'state', 'changes', 'error'],
 } as const;
 
-export type ExportTable = keyof typeof EXPORT_TABLES;
-
 const REVISION_COLUMNS = EXPORT_TABLES.revisions.join(', ');
 
 export const SQL = {
-  /** 1 when the meta table exists. */
-  hasMeta: `SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'meta'`,
-  getVersion: `SELECT value FROM meta WHERE key = 'schema_version'`,
-  setVersion: `INSERT INTO meta (key, value) VALUES ('schema_version', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
-
   currentRevision: `SELECT ${REVISION_COLUMNS} FROM revisions WHERE kind = ? AND zone IS ? AND status = 'approved' ORDER BY id DESC LIMIT 1`,
   currentInventories: `SELECT ${REVISION_COLUMNS} FROM revisions r WHERE kind = 'inventory' AND status = 'approved'
   AND id = (SELECT max(id) FROM revisions s WHERE s.kind = 'inventory' AND s.zone = r.zone AND s.status = 'approved')
@@ -134,10 +128,4 @@ export const SQL = {
   insertRunZone: `INSERT INTO run_zones (run_id, zone, state, changes, error) VALUES (?, ?, ?, ?, ?)`,
   listRuns: `SELECT id, created_at FROM runs ORDER BY id`,
   listRunZones: `SELECT id, run_id, zone, state, changes, error FROM run_zones ORDER BY run_id, id`,
-
-  /** Every row of a table, in export column order, ordered by id. */
-  exportRows: (table: ExportTable) => `SELECT ${EXPORT_TABLES[table].join(', ')} FROM ${table} ORDER BY id`,
-  importRow: (table: ExportTable) =>
-    `INSERT INTO ${table} (${EXPORT_TABLES[table].join(', ')}) VALUES (${EXPORT_TABLES[table].map(() => '?').join(', ')})`,
-  countRows: (table: ExportTable) => `SELECT count(*) AS n FROM ${table}`,
 } as const;

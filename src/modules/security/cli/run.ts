@@ -1,5 +1,6 @@
-// The flarewall command line: the zone commands (init, add, status, diff, apply, restore, tui) and
-// the revision commands (edit, propose, log, show, revert, approve, reject, backups, export, import).
+// The security command line: the zone commands (init, add, status, diff, apply, restore, tui) and
+// the revision commands (edit, propose, log, show, revert, approve, reject, backups). export and
+// import moved to the top level (src/cli/run.ts); here they only say so.
 import { parseArgs } from 'node:util';
 import type { CloudflareApi } from '../core/api.js';
 import { applyInventoryZone, restoreZone, type BackupWriter } from '../core/apply.js';
@@ -19,7 +20,7 @@ import {
 } from '../core/revisions.js';
 import type { Inventory } from '../core/schema.js';
 import { exitCode, statusAll } from '../core/status.js';
-import { docName, exportText, parseExport, StoreError, type DataStore, type DocRef, type Revision } from '../core/store.js';
+import { docName, StoreError, type DataStore, type DocRef, type Revision } from '../core/store.js';
 import type { Editor } from '../node/edit.js';
 import { applyOutcomeText, diffLines, planLines, restoreLines, restoreOutcomeText, statusLines } from './format.js';
 
@@ -36,7 +37,7 @@ export type Confirm = (question: string) => Promise<boolean>;
 
 export interface RunDeps {
   api?: ApiFactory;
-  /** The data store. Default: the SQLite file at FLAREWALL_DB. Tests pass an in-memory store, which run does not close. */
+  /** The data store. Default: the SQLite file at FLAREALOY_DB. Tests pass an in-memory store, which run does not close. */
   store?: DataStore;
   /** The per-zone prompt. Default: a readline question on stdin. */
   confirm?: Confirm;
@@ -46,7 +47,7 @@ export interface RunDeps {
   now?: () => Date;
   /** The editor for `edit`. Default: $VISUAL or $EDITOR. */
   editor?: Editor;
-  /** Reads all of stdin, for `propose ... -`. */
+  /** Reads all of stdin, for `propose ... -` and `flarealoy import -`. */
   readStdin?: () => Promise<string>;
 }
 
@@ -92,8 +93,6 @@ Revision commands:
   revert <id>       Save the text of an older approved revision as a new revision
   approve <id>      Approve a pending revision
   reject <id>       Reject a pending revision
-  export <file>     Write every table to one JSON file
-  import <file>     Load an export file into an empty database
 
 Options:
   --all             apply: every inventory zone
@@ -115,6 +114,7 @@ Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
 Exit codes (other commands): 0 done or declined, 2 any failure or a usage error`;
 
 const TOKEN_MISSING = 'CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only';
+const MOVED = 'moved: run flarealoy export';
 const DATA_GONE = '--data is gone; flarealoy reads FLAREALOY_DB';
 
 function message(error: unknown): string {
@@ -452,34 +452,10 @@ export async function run(
         io.out(`${r.status} revision ${r.id} (${revisionDoc(r)})`);
         return 0;
       }
-      case 'export': {
-        if (rest.length !== 1 || rest[0] === undefined) {
-          io.err('export takes one file name');
-          return 2;
-        }
-        const store = await openStore();
-        const { writeFile } = await import('node:fs/promises');
-        try {
-          await writeFile(rest[0], exportText(await store.exportData()), { flag: 'wx', mode: 0o600 });
-        } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new DataError(`${rest[0]} already exists; flarealoy security export does not overwrite it`);
-          throw error;
-        }
-        io.out(`exported ${store.location} to ${rest[0]}`);
-        return 0;
-      }
-      case 'import': {
-        if (rest.length !== 1 || rest[0] === undefined) {
-          io.err('import takes one file name');
-          return 2;
-        }
-        const { readFile } = await import('node:fs/promises');
-        const data = parseExport(await readFile(rest[0], 'utf8'));
-        const store = await openStore(true);
-        await store.importData(data);
-        io.out(`imported ${data.revisions.length} revisions, ${data.backups.length} backups, and ${data.runs.length} runs into ${store.location}`);
-        return 0;
-      }
+      case 'export':
+      case 'import':
+        io.err(MOVED);
+        return 2;
       case 'tui': {
         if (rest.length > 0) {
           io.err(`tui takes no arguments, got: ${rest.join(' ')}`);
