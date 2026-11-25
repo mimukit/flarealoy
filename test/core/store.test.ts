@@ -101,7 +101,7 @@ describe('open and migrate', () => {
     const after = new DatabaseSync(path);
     try {
       for (const table of TABLES) expect(rows(after, table)).toEqual(before[table]);
-      expect(meta(after)).toEqual({ 'schema_version.core': '1', 'schema_version.security': '1' });
+      expect(meta(after)).toEqual({ 'schema_version.core': String(CORE_MIGRATIONS.length), 'schema_version.security': '1' });
     } finally {
       after.close();
     }
@@ -155,7 +155,7 @@ describe('export and import', () => {
       importDatabase(db, parseExport(FIXTURE, MODULES), 'memory');
       const out = exportDatabase(db);
       expect(Object.keys(out)).toEqual(['flarealoy_export', 'schema_versions', 'tables']);
-      expect(out.schema_versions).toEqual({ core: 1, security: 1 });
+      expect(out.schema_versions).toEqual({ core: CORE_MIGRATIONS.length, security: 1 });
       expect(Object.keys(out.tables)).toEqual([...TABLES]);
       const source = JSON.parse(FIXTURE) as Record<string, unknown>;
       for (const table of TABLES) expect(out.tables[table]).toEqual(source[table]);

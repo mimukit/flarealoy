@@ -117,6 +117,18 @@ Plan on two user tokens, each scoped to the zones you manage. A read-only one co
 
 The exact rulesets permission for a zone-level phase read is not yet checked against a live zone. If a read fails with a 403, the error names the phase; add the matching rulesets permission.
 
+## Alerts
+
+flarealoy sends every alert through one channel, and sends each alert once: it records the dedupe key of each sent alert in the `core_alerts` table and skips a key it already holds. The first channel is [ntfy](https://ntfy.sh). Configure it with environment variables only:
+
+| Variable | Value |
+|----------|-------|
+| `FLAREALOY_NTFY_TOPIC` | The ntfy topic. Setting it turns on the ntfy channel. On the public ntfy.sh server, anyone who knows the topic can read it, so pick a long random name. |
+| `FLAREALOY_NTFY_URL` | The ntfy server. Default: `https://ntfy.sh`. |
+| `FLAREALOY_NTFY_TOKEN` | An access token for a protected topic (optional). flarealoy sends it as a Bearer token and never writes it to a file. |
+
+Run `flarealoy test-alert` after `flarealoy init` to send one test message. It exits 0 when the channel accepted the message, 1 when the delivery failed, and 2 when no channel is configured or the database is missing.
+
 ## Stack
 
 TypeScript on Node 22.13 or later, `node:sqlite` for the data store, the official [`cloudflare`](https://github.com/cloudflare/cloudflare-typescript) SDK, Zod for the baseline and inventory schemas, and [Ink](https://github.com/vadimdemedes/ink) for the terminal UI.

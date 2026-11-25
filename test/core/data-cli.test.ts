@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { run, type RunDeps } from '../../src/cli/run.js';
+import { CORE_MIGRATIONS } from '../../src/core/store-sql.js';
 
 const FIXTURE = readFileSync(new URL('./fixtures/flarewall-export-v1.json', import.meta.url), 'utf8');
 const TABLES = ['revisions', 'backups', 'runs', 'run_zones'];
@@ -67,7 +68,7 @@ describe('flarealoy export and import', () => {
     expect(statSync(file).mode & 0o777).toBe(0o600);
     const out = JSON.parse(readFileSync(file, 'utf8')) as { schema_versions: unknown; tables: Record<string, unknown> };
     const source = JSON.parse(FIXTURE) as Record<string, unknown>;
-    expect(out.schema_versions).toEqual({ core: 1, security: 1 });
+    expect(out.schema_versions).toEqual({ core: CORE_MIGRATIONS.length, security: 1 });
     for (const table of TABLES) expect(out.tables[table]).toEqual(source[table]);
     expect((await cli(['security', 'log'])).out.split('\n')).toHaveLength(6);
   });
