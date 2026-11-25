@@ -3,6 +3,7 @@
 // it later with the same SQL (src/modules/security/core/store-sql.ts). Export and import of every
 // table live in the platform store (src/core/store.ts, src/node/sqlite-store.ts).
 // Core module: no Node-only API here, so a Worker can run it.
+import type { ZoneStore } from '../../../core/zones.js';
 import type { ZoneState } from './diff.js';
 
 // One StoreError class for the platform and every module, so `instanceof` holds everywhere.
@@ -74,6 +75,8 @@ export interface Run {
 export interface DataStore {
   /** Where the data lives, for messages and the TUI footer. */
   readonly location: string;
+  /** The core zones table on the same database: `add` and the security.diff job write it. */
+  readonly zones: ZoneStore;
   /** The newest approved revision of a document. */
   current(doc: DocRef): Promise<Revision | undefined>;
   /** The current revision of every zone inventory, by zone name. */

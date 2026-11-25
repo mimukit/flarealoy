@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { run } from '../../src/cli/run.js';
-import { formatInterval, parseInterval, runScheduler, type Job, type JobRun, type JobRunStore, type SchedulerClock } from '../../src/core/scheduler.js';
+import { formatInterval, parseInterval, runScheduler, STOP_GRACE_MS, type Job, type JobRun, type JobRunStore, type SchedulerClock } from '../../src/core/scheduler.js';
 import { registeredJobs } from '../../src/node/jobs.js';
 import { runService, sqliteJobRuns } from '../../src/node/scheduler.js';
 import { MEMORY, openDatabase } from '../../src/node/sqlite-store.js';
@@ -13,13 +13,24 @@ import { MEMORY, openDatabase } from '../../src/node/sqlite-store.js';
 const MIN = 60_000;
 const T0 = Date.parse('2026-11-25T00:00:00.000Z');
 
-/** A clock that jumps over each sleep, and aborts the loop when a sleep would pass `until`. */
-function fakeClock(start: number, until: number, controller: AbortController) {
+/**
+ * A clock that jumps over each sleep of the loop, and aborts the loop when a sleep would pass
+ * `until`. Any other sleep (a job's time limit, the stop grace) is a timer: it never elapses on its
+ * own and ends when its signal aborts, unless `timers` is 'elapse'.
+ */
+function fakeClock(start: number, until: number, controller: AbortController, timers: 'wait' | 'elapse' | ((ms: number) => boolean) = 'wait') {
   const clock = {
     t: start,
     sleeps: [] as number[],
+    timers: [] as number[],
     now: () => new Date(clock.t),
-    sleep: async (ms: number) => {
+    sleep: async (ms: number, signal: AbortSignal) => {
+      if (signal !== controller.signal) {
+        clock.timers.push(ms);
+        if (timers === 'elapse' || (typeof timers === 'function' && timers(ms)) || signal.aborted) return;
+        await new Promise<void>((resolve) => signal.addEventListener('abort', () => resolve(), { once: true }));
+        return;
+      }
       clock.sleeps.push(ms);
       if (clock.t + ms > until) {
         clock.t = until;
@@ -128,6 +139,120 @@ describe('runScheduler with a fake clock', () => {
     expect(c.out.at(-1)).toMatch(/flarealoy run: stopped$/);
   });
 
+  it('times out a hung job, records an error run, and runs the other jobs', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 25 * MIN, controller, 'elapse');
+    let seen: AbortSignal | undefined;
+    const hung: Job = {
+      name: 'test.hung',
+      intervalMs: 10 * MIN,
+      timeoutMs: 2 * MIN,
+      run: (signal) => {
+        seen = signal;
+        return new Promise<void>(() => {});
+      },
+    };
+    const good = job('test.good', 10 * MIN, clock);
+    const store = memoryRuns();
+    const c = capture();
+
+    await runScheduler([hung, good.job], { clock, store, log: c.log, signal: controller.signal });
+
+    expect(good.runs).toEqual([0, 10, 20]);
+    expect(seen?.aborted).toBe(true);
+    expect(store.rows.get('test.hung')).toMatchObject({ status: 'error', error: 'timed out after 2m' });
+    expect(c.err.filter((l) => l.includes('job test.hung error'))).toHaveLength(3);
+    expect(clock.timers).toContain(2 * MIN);
+  });
+
+  it('gives a job the interval as its default time limit, at most one hour', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + MIN, controller);
+    const a = job('test.a', 10 * MIN, clock);
+    const b = job('test.b', 24 * 60 * MIN, clock);
+    await runScheduler([a.job, b.job], { clock, store: memoryRuns(), log: capture().log, signal: controller.signal });
+    expect(clock.timers).toEqual([10 * MIN, 60 * MIN]);
+  });
+
+  it('stops on the signal while a job hangs, after the grace time, and records no run', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 60 * MIN, controller, (ms) => ms === STOP_GRACE_MS);
+    let seen: AbortSignal | undefined;
+    const hung: Job = {
+      name: 'test.hung',
+      intervalMs: 10 * MIN,
+      run: (signal) => {
+        seen = signal;
+        queueMicrotask(() => controller.abort());
+        return new Promise<void>(() => {});
+      },
+    };
+    const next = job('test.next', 10 * MIN, clock);
+    const store = memoryRuns();
+    const c = capture();
+
+    await runScheduler([hung, next.job], { clock, store, log: c.log, signal: controller.signal });
+
+    expect(seen?.aborted).toBe(true);
+    expect(next.runs).toEqual([]);
+    expect(store.rows.size).toBe(0);
+    expect(c.err).toEqual(['2026-11-25T00:00:00.000Z job test.hung stopped 0ms: the service stops; the run is not recorded']);
+    expect(c.out.at(-1)).toMatch(/flarealoy run: stopped$/);
+  });
+
+  it('runs a job whose stored start is not a time now, once, then on its interval', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 25 * MIN, controller);
+    const a = job('test.a', 10 * MIN, clock);
+    const store = memoryRuns([{ job: 'test.a', startedAt: 'not a time', finishedAt: 'not a time', status: 'ok', error: null }]);
+
+    await runScheduler([a.job], { clock, store, log: capture().log, signal: controller.signal });
+
+    expect(a.runs).toEqual([0, 10, 20]);
+    expect(clock.sleeps.every((ms) => ms > 0)).toBe(true);
+  });
+
+  it('logs a store that cannot record a run, keeps the loop, and still waits one interval', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 25 * MIN, controller);
+    const a = job('test.a', 10 * MIN, clock);
+    const store: JobRunStore = {
+      last: () => undefined,
+      record: () => {
+        throw new Error('database is locked');
+      },
+    };
+    const c = capture();
+
+    await runScheduler([a.job], { clock, store, log: c.log, signal: controller.signal });
+
+    expect(a.runs).toEqual([0, 10, 20]);
+    expect(c.err).toEqual([
+      '2026-11-25T00:00:00.000Z job test.a: cannot record the run: database is locked',
+      '2026-11-25T00:10:00.000Z job test.a: cannot record the run: database is locked',
+      '2026-11-25T00:20:00.000Z job test.a: cannot record the run: database is locked',
+    ]);
+    expect(c.out.filter((l) => l.includes(' job test.a ok '))).toHaveLength(3);
+  });
+
+  it('logs a store that cannot read the last run, and keeps the loop', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 15 * MIN, controller);
+    const a = job('test.a', 10 * MIN, clock);
+    const store: JobRunStore = {
+      last: () => {
+        throw new Error('disk I/O error');
+      },
+      record: () => {},
+    };
+    const c = capture();
+
+    await runScheduler([a.job], { clock, store, log: c.log, signal: controller.signal });
+
+    expect(a.runs).toEqual([0, 10]);
+    expect(c.err[0]).toBe('2026-11-25T00:00:00.000Z job test.a: cannot read the last run: disk I/O error');
+  });
+
   it('with no jobs, sleeps until the signal aborts', async () => {
     const controller = new AbortController();
     const clock = fakeClock(T0, T0 + MIN, controller);
@@ -141,6 +266,7 @@ describe('runScheduler with a fake clock', () => {
     const noop = async () => {};
     await expect(runScheduler([{ name: 'x', intervalMs: 1, run: noop }, { name: 'x', intervalMs: 1, run: noop }], options)).rejects.toThrow('two jobs have the name x');
     await expect(runScheduler([{ name: 'y', intervalMs: 0, run: noop }], options)).rejects.toThrow('job y has no positive interval');
+    await expect(runScheduler([{ name: 'z', intervalMs: 1, timeoutMs: 0, run: noop }], options)).rejects.toThrow('job z has no positive timeout');
   });
 });
 
@@ -170,10 +296,22 @@ describe('interval text', () => {
 
 describe('the job registry', () => {
   const db = openDatabase(MEMORY);
+  const off = { FLAREALOY_SECURITY_DIFF_INTERVAL: 'off' };
   it('registers core.heartbeat every 24h by default, at FLAREALOY_HEARTBEAT_INTERVAL, and not at off', () => {
-    expect(registeredJobs({ env: {}, db }).map((j) => [j.name, j.intervalMs])).toEqual([['core.heartbeat', 24 * 60 * MIN]]);
-    expect(registeredJobs({ env: { FLAREALOY_HEARTBEAT_INTERVAL: '15m' }, db }).map((j) => j.intervalMs)).toEqual([15 * MIN]);
-    expect(registeredJobs({ env: { FLAREALOY_HEARTBEAT_INTERVAL: 'off' }, db })).toEqual([]);
+    expect(registeredJobs({ env: off, db }).map((j) => [j.name, j.intervalMs])).toEqual([['core.heartbeat', 24 * 60 * MIN]]);
+    expect(registeredJobs({ env: { ...off, FLAREALOY_HEARTBEAT_INTERVAL: '15m' }, db }).map((j) => j.intervalMs)).toEqual([15 * MIN]);
+    expect(registeredJobs({ env: { ...off, FLAREALOY_HEARTBEAT_INTERVAL: 'off' }, db })).toEqual([]);
+  });
+
+  it('registers security.diff every 24h by default, at FLAREALOY_SECURITY_DIFF_INTERVAL, and not at off', () => {
+    expect(registeredJobs({ env: {}, db }).map((j) => [j.name, j.intervalMs])).toEqual([
+      ['core.heartbeat', 24 * 60 * MIN],
+      ['security.diff', 24 * 60 * MIN],
+    ]);
+    expect(registeredJobs({ env: { FLAREALOY_SECURITY_DIFF_INTERVAL: '6h', FLAREALOY_HEARTBEAT_INTERVAL: 'off' }, db }).map((j) => [j.name, j.intervalMs])).toEqual([['security.diff', 6 * 60 * MIN]]);
+    expect(() => registeredJobs({ env: { FLAREALOY_SECURITY_DIFF_INTERVAL: 'daily' }, db })).toThrow(
+      'FLAREALOY_SECURITY_DIFF_INTERVAL must be a positive interval such as 15m, 24h or 1d, or off; got: daily',
+    );
   });
 });
 
@@ -190,7 +328,7 @@ describe('flarealoy run', () => {
     const controller = new AbortController();
     const clock = fakeClock(start, until, controller);
     const c = capture();
-    const code = await runService({ FLAREALOY_DB: path, ...env }, c.log, { clock, signal: controller.signal });
+    const code = await runService({ FLAREALOY_DB: path, FLAREALOY_SECURITY_DIFF_INTERVAL: 'off', ...env }, c.log, { clock, signal: controller.signal });
     return { code, ...c };
   }
 
@@ -228,7 +366,7 @@ describe('flarealoy run', () => {
       },
     };
     const c = capture();
-    const code = await runService({ FLAREALOY_DB: path, FLAREALOY_HEARTBEAT_INTERVAL: 'off' }, c.log, { clock, signal: controller.signal, extraJobs: () => [slow] });
+    const code = await runService({ FLAREALOY_DB: path, FLAREALOY_HEARTBEAT_INTERVAL: 'off', FLAREALOY_SECURITY_DIFF_INTERVAL: 'off' }, c.log, { clock, signal: controller.signal, extraJobs: () => [slow] });
     expect(code).toBe(0);
     expect(c.err).toEqual(['2026-11-25T00:00:03.000Z job test.slow error 3000ms: timeout']);
     const db = openDatabase(path);

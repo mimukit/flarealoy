@@ -10,7 +10,12 @@ services:
     environment:
       CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
       CLOUDFLARE_WRITE_TOKEN: ${CLOUDFLARE_WRITE_TOKEN:-}
+      # The alert channel of the security.diff job and test-alert. Set these in Dokploy too.
+      FLAREALOY_NTFY_TOPIC: ${FLAREALOY_NTFY_TOPIC:-}
+      FLAREALOY_NTFY_URL: ${FLAREALOY_NTFY_URL:-}
+      FLAREALOY_NTFY_TOKEN: ${FLAREALOY_NTFY_TOKEN:-}
       # FLAREALOY_HEARTBEAT_INTERVAL: 24h
+      # FLAREALOY_SECURITY_DIFF_INTERVAL: 24h
     volumes:
       - flarealoy-data:/data
 

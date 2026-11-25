@@ -4,6 +4,7 @@
 import { createHash } from 'node:crypto';
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import { immediate, MEMORY, openDatabase, resolveDbPath } from '../../../node/sqlite-store.js';
+import { zoneStore } from '../../../node/zones-store.js';
 import type { ZoneState } from '../core/diff.js';
 import { SQL } from '../core/store-sql.js';
 import {
@@ -79,6 +80,7 @@ export function securityStore(db: DatabaseSync, location: string, now: () => Dat
 
   return {
     location,
+    zones: zoneStore(db),
     current: async (doc) => current(doc),
     currentInventories: async () => all(SQL.currentInventories).map(toRevision),
     listRevisions: async (filter = {}) =>

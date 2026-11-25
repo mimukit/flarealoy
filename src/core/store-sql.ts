@@ -6,6 +6,7 @@
 import { CORE_ALERTS_MIGRATION } from './alerts-sql.js';
 import { ACCOUNTS_MIGRATION } from './accounts.js';
 import { JOB_RUNS_MIGRATION } from './job-runs-sql.js';
+import { ZONES_MIGRATION } from './zones.js';
 
 /** The name of the platform core in the meta keys and in the export's schema_versions. */
 export const CORE = 'core';
@@ -41,6 +42,8 @@ UPDATE meta SET key = 'schema_version.security' WHERE key = 'schema_version';
   ACCOUNTS_MIGRATION,
   // 4: the scheduler's last run of each job (src/core/job-runs-sql.ts).
   JOB_RUNS_MIGRATION,
+  // 5: core_zones, filled from the current inventory revisions (src/core/zones.ts, issue #16).
+  ZONES_MIGRATION,
 ];
 
 export const CORE_SQL = {
