@@ -97,7 +97,7 @@ Issue order (one issue per phase; the usage issues come from the usage plan):
 
 The GraphQL spike and the usage pure logic (the limits table, the threshold and projection math, the query builder) need only the `src/modules/usage/` folder. They can start after Phase 2.
 
-### Phase 1: rename the repo
+### Phase 1: rename the repo (#10)
 Attended: the owner pushes the tag, runs the GitHub rename and moves the local folder.
 - Tag the newest `main` commit as `flarewall-v0.1.0` and push the tag.
 - Rename the repo with `gh repo rename flarealoy`.
@@ -105,7 +105,7 @@ Attended: the owner pushes the tag, runs the GitHub rename and moves the local f
 - Move `/home/dev/projects/flarewall` to `/home/dev/projects/flarealoy` and update the T3 project root.
 Done when: `gh repo view --json nameWithOwner` prints `mimukit/flarealoy`, `git ls-remote --tags origin flarewall-v0.1.0` prints one line, and the old URL `https://github.com/mimukit/flarewall` redirects to the new one.
 
-### Phase 2: move flarewall into the security module
+### Phase 2: move flarewall into the security module (#11)
 - Add `test/cli-transcript.test.ts`: every command in the security usage text, run through `run()` with the fake API and an in-memory store, with a snapshot of stdout, stderr and the exit code. Include the error paths: no token, no database, `--data` set, a bad revision id. Commit it on its own before the move.
 - `git mv` `src/core/*`, `src/node/*`, `src/cli/*`, `src/tui/*` and `src/baseline/*` to `src/modules/security/{core,node,cli,tui,baseline}/`.
 - `git mv` `test/*` to `test/security/`, with `__snapshots__`.
@@ -113,7 +113,7 @@ Done when: `gh repo view --json nameWithOwner` prints `mimukit/flarealoy`, `git 
 - Update the core purity test to scan `src/modules/security/core/`.
 Done when: `pnpm typecheck` passes; `pnpm test` reports at least 226 tests passed (225 plus the transcript); `git diff -M50% --name-status flarewall-v0.1.0 -- src` shows only `R` lines; `git diff -M50% flarewall-v0.1.0 -- src | grep '^[+-][^+-]' | grep -vE '^[+-]\s*(import|\} from|from )'` prints nothing; the old and new render snapshot files are byte-identical; the transcript snapshot file did not change in the move commit; `pnpm build && node dist/modules/security/cli/main.js --help` prints the old usage text.
 
-### Phase 3: the `flarealoy` binary and the dispatcher
+### Phase 3: the `flarealoy` binary and the dispatcher (#11)
 - Rename the package to `flarealoy` (version `0.1.0`), set the description, and set `bin` to `{ "flarealoy": "dist/cli/main.js" }`.
 - Add `src/cli/main.ts` and `src/cli/run.ts`: top-level help, `security <cmd>` passes the rest of argv and `RunDeps` to the security `run()`, and an unknown module or command exits 2 with the usage text.
 - Change the security usage text and messages from `flarewall <cmd>` to `flarealoy security <cmd>`.
@@ -121,7 +121,7 @@ Done when: `pnpm typecheck` passes; `pnpm test` reports at least 226 tests passe
 - Add dispatcher tests in `test/core/cli.test.ts`.
 Done when: `pnpm test` passes; the transcript snapshot diff in the Phase 3 commit shows only `flarewall` to `flarealoy` and `flarealoy security` substitutions plus the path in the database messages; `node dist/cli/main.js security status` with no database prints `no flarealoy database at <path>; run flarealoy security init` and exits 2; `FLAREWALL_DB=x node dist/cli/main.js security status` prints the old-variable message and exits 2.
 
-### Phase 4: core store and the data migration
+### Phase 4: core store and the data migration (#11)
 - Move the open, the file safety, the `meta` table, the migration runner, `export`, `import` and `StoreError` from the security store to `src/core/store.ts`, `src/core/store-sql.ts` and `src/node/sqlite-store.ts`.
 - Add module registration: each module gives its name, its migration list and its export tables. Security registers its shipped `MIGRATIONS` unchanged.
 - Add the core migration that moves `schema_version` to `schema_version.security`.
@@ -129,46 +129,46 @@ Done when: `pnpm test` passes; the transcript snapshot diff in the Phase 3 commi
 - Move `export` and `import` to the top level. `flarealoy security export` and `flarealoy security import` stop with `moved: run flarealoy export`. `import` reads a path or `-` for stdin, and accepts a flarewall export.
 Done when: `pnpm test` passes and the transcript snapshot changes only on the `export` and `import` lines; a test opens a flarewall version 1 file with rows in all four tables and checks that every row, id and timestamp is equal after the migration and that the key is now `schema_version.security`; a test pipes a flarewall export fixture into `import -`, exports again and gets the same rows; a newer `schema_version.security` stops the command with the upgrade message.
 
-### Phase 5: accounts and token capability
+### Phase 5: accounts and token capability (#12)
 - Add the `core_accounts` migration (with `token_env`) and `flarealoy account add <account-id> --label <text> --plan free|paid [--token-env <NAME>]`, `account list`, `account set`, `account remove`. Limit overrides are a JSON column; the usage plan defines their shape.
 - Add `src/core/tokens.ts`: the read token for an account (its `token_env`, else `CLOUDFLARE_API_TOKEN`, else `CLOUDFLARE_WRITE_TOKEN`), the write token from `CLOUDFLARE_WRITE_TOKEN`, and a `requireWrite(command)` check.
 - Gate `security apply --write`, `security restore --write` and the TUI write keys on the write token. Dry runs, `status`, `diff` and `add` use the read token.
 Done when: `pnpm test` passes; `CLOUDFLARE_API_TOKEN=t flarealoy security apply example.com --write` against the fake API exits 2 with the write-token message and the fake records zero writes; the same command with `CLOUDFLARE_WRITE_TOKEN` set runs the write path; with only `CLOUDFLARE_WRITE_TOKEN` set, `security status` runs; `flarealoy account add` then `account list` prints the account with its plan and token variable.
 
-### Phase 6: notifier and `test-alert`
+### Phase 6: notifier and `test-alert` (#13)
 - Add the `Notifier` port in `src/core/notifier.ts` with a dedupe key, and the `core_alerts` table that records each sent key.
 - Add the Node adapter for the channel the usage plan picks, configured from environment variables only.
 - Add `flarealoy test-alert`.
 Done when: `pnpm test` passes with a fake notifier that records messages; a second send with the same dedupe key sends nothing; `flarealoy test-alert` with the fake notifier records one message.
 
-### Phase 7: scheduler, `flarealoy run` and Docker
+### Phase 7: scheduler, `flarealoy run` and Docker (#14)
 - Add the job model in `src/core/scheduler.ts`, the Node loop in `src/node/`, and `core_job_runs`.
 - Add `flarealoy run`: it opens the store, registers each module's jobs, runs each job on its interval, and logs one line for each run. It stops cleanly on SIGTERM.
 - Add a `Dockerfile` (Node 22.13 or later, non-root user, `vi`, `FLAREALOY_DB=/data/flarealoy.sqlite`) and `compose.example.yaml` with one `flarealoy` service and a named `/data` volume.
 - Add `.dockerignore` with `*.sqlite` and `.env*`.
 Done when: `pnpm test` passes with a fake clock that drives two jobs on different intervals; `docker build .` succeeds; `docker run` of the image with a test job logs one run line and exits 0 on SIGTERM; `docker run --rm <image> sh -c 'command -v vi'` prints a path.
 
-### Phase 8: deploy with Dokploy
+### Phase 8: deploy with Dokploy (#15)
 Attended: the owner deploys with Dokploy on the host of their choice and sets the tokens and the alert channel variables.
 - Create the Dokploy compose app from the repo, with the `/data` volume and a Dokploy volume backup.
 - Set `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_WRITE_TOKEN` and the notifier variables in Dokploy.
 - Add the README shell function on each work machine.
 Done when: `flarealoy init` through the shell function creates `/data/flarealoy.sqlite`; `flarealoy test-alert` through the shell function delivers one message on the picked channel; the Dokploy logs show one `flarealoy run` line for each job run.
 
-### Phase 9: move the owner's data to the server
+### Phase 9: move the owner's data to the server (#15)
 Attended: the owner runs the export on the machine that holds the old flarewall file.
 - Build `flarewall-v0.1.0` and run `flarewall export old.json` on the machine that holds the old file.
 - Run `ssh <host> docker exec -i <container> flarealoy import - < old.json`.
 - Skip this phase when no old flarewall file exists.
 Done when: `flarealoy security log` through the shell function lists the same revision ids as `flarewall log` on the old machine, and `flarealoy security backups <zone>` lists the same backup ids for one zone.
 
-### Phase 10: security drift to the shared alerts
+### Phase 10: security drift to the shared alerts (#16)
 - Add `core_zones` and write it from `flarealoy security add`. A migration fills it from the current inventory revisions with an empty account ID.
 - Register a `security.diff` job on the `FLAREALOY_SECURITY_DIFF_INTERVAL` interval (default 24 hours). It runs `diff` for every inventory zone with the read token, records the run as `flarealoy security diff` does, and fills empty account IDs in `core_zones` from `listZones()`.
 - The job sends one alert when a zone enters drift, legacy or error, and one when the zone is back in sync. The dedupe key is the zone and the state.
 Done when: `pnpm test` passes; with the fake API, a test edits a fake zone rule, runs the job twice, and the fake notifier holds exactly one drift message; a third run after the fix holds one in-sync message; a run with a failing API sends one error message and no drift message; after one job run, no `core_zones` row has an empty account ID.
 
-### Phase 11: docs and the npm releases
+### Phase 11: docs and the npm releases (#17)
 Attended: the owner runs `npm publish` for `flarealoy` and the `flarewall` placeholder, and runs `npm deprecate`.
 - Rewrite `README.md` for Flarealoy: install, the server setup, the shell function, the data migration, the command table, the token variables.
 - Update `AGENTS.md` (project description, token rule, `FLAREALOY_DB`, the server store), the `.gitignore` comments, and the plan 0001 and plan 0003 superseded notes.
