@@ -267,6 +267,9 @@ describe('write token', () => {
     const written = await cli(['apply', 'example.com', '--write', '--yes'], { deps: tracked });
     expect({ dry, written, writes: api.writes.length, tokens }).toMatchSnapshot();
   });
+  it('a read command ignores --write and runs on the read token', async () => {
+    expect({ status: await cli(['status', '--write'], { env: READ_ONLY, deps: tracked }), tokens }).toMatchSnapshot();
+  });
   it('status runs with only CLOUDFLARE_WRITE_TOKEN', async () => {
     expect({ status: await cli(['status'], { env: WRITE_ONLY, deps: tracked }), tokens }).toMatchSnapshot();
   });

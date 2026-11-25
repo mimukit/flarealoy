@@ -182,7 +182,8 @@ export async function run(
     return 2;
   }
 
-  const write = parsed.values.write === true;
+  // Only apply and restore write; the other commands ignore --write, as before.
+  const write = parsed.values.write === true && (command === 'apply' || command === 'restore');
   /**
    * The API client. A write command (`--write`) uses CLOUDFLARE_WRITE_TOKEN for every call; every
    * other command uses the read token.
