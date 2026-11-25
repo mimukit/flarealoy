@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { render, RenderError, wordpressOriginIps, type DnsRecord } from '../src/core/render.js';
-import { parseInventory, type Baseline } from '../src/core/schema.js';
+import { render, RenderError, wordpressOriginIps, type DnsRecord } from '../../src/modules/security/core/render.js';
+import { parseInventory, type Baseline } from '../../src/modules/security/core/schema.js';
 import { defaultBaseline, legacyCase, readFixture } from './helpers.js';
 
 const INVENTORY_TEXT = readFixture('legacy-script/api-wordpress-geo-root/inventory.yaml');

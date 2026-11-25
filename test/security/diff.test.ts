@@ -1,7 +1,7 @@
 // diffZone unit cases: the field allowlist and the parts it leaves alone.
 import { describe, expect, it } from 'vitest';
-import { diffZone, type LiveZone } from '../src/core/diff.js';
-import { render, type DesiredZone } from '../src/core/render.js';
+import { diffZone, type LiveZone } from '../../src/modules/security/core/diff.js';
+import { render, type DesiredZone } from '../../src/modules/security/core/render.js';
 import { liveFromDesired } from './fake-api.js';
 import { defaultBaseline, legacyCase } from './helpers.js';
 

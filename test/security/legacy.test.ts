@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { isLegacyRule } from '../src/core/legacy.js';
-import { render } from '../src/core/render.js';
+import { isLegacyRule } from '../../src/modules/security/core/legacy.js';
+import { render } from '../../src/modules/security/core/render.js';
 import { defaultBaseline, legacyCase } from './helpers.js';
 
 describe('isLegacyRule', () => {

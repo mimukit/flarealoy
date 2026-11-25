@@ -1,11 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { parseBaseline, parseInventory, type Baseline, type Inventory } from '../src/core/schema.js';
-import type { DnsRecord } from '../src/core/render.js';
-import type { DataStore } from '../src/core/store.js';
-import { MEMORY, openSqliteStore } from '../src/node/sqlite-store.js';
+import { parseBaseline, parseInventory, type Baseline, type Inventory } from '../../src/modules/security/core/schema.js';
+import type { DnsRecord } from '../../src/modules/security/core/render.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
+import { MEMORY, openSqliteStore } from '../../src/modules/security/node/sqlite-store.js';
 
-export const DEFAULT_BASELINE_FILE = fileURLToPath(new URL('../src/baseline/default.yaml', import.meta.url));
+export const DEFAULT_BASELINE_FILE = fileURLToPath(new URL('../../src/modules/security/baseline/default.yaml', import.meta.url));
 
 export function fixturePath(relative: string): string {
   return fileURLToPath(new URL(`./fixtures/${relative}`, import.meta.url));

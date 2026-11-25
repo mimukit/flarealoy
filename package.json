@@ -9,7 +9,7 @@
     "node": ">=22.13"
   },
   "bin": {
-    "flarewall": "dist/cli/main.js"
+    "flarewall": "dist/modules/security/cli/main.js"
   },
   "files": [
     "dist"

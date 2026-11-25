@@ -3,8 +3,8 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { run } from '../src/cli/run.js';
-import { openSqliteStore } from '../src/node/sqlite-store.js';
+import { run } from '../../src/modules/security/cli/run.js';
+import { openSqliteStore } from '../../src/modules/security/node/sqlite-store.js';
 import { DEFAULT_BASELINE_FILE } from './helpers.js';
 
 function capture() {

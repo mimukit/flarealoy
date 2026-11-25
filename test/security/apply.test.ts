@@ -1,11 +1,11 @@
 // C11 to C15: apply and restore, driven through the CLI with an in-memory CloudflareApi.
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { run, type RunDeps } from '../src/cli/run.js';
-import type { LiveRule } from '../src/core/api.js';
-import { applyInventoryZone, planZone } from '../src/core/apply.js';
-import { render, type Phase } from '../src/core/render.js';
-import { parseInventory } from '../src/core/schema.js';
-import type { DataStore } from '../src/core/store.js';
+import { run, type RunDeps } from '../../src/modules/security/cli/run.js';
+import type { LiveRule } from '../../src/modules/security/core/api.js';
+import { applyInventoryZone, planZone } from '../../src/modules/security/core/apply.js';
+import { render, type Phase } from '../../src/modules/security/core/render.js';
+import { parseInventory } from '../../src/modules/security/core/schema.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
 import { FakeCloudflareApi, liveFromDesired } from './fake-api.js';
 import { defaultBaseline, legacyCase, memoryStore, putBaseline, putInventory, readFixture } from './helpers.js';
 

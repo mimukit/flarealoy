@@ -2,11 +2,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { run } from '../src/cli/run.js';
-import { render, type Phase } from '../src/core/render.js';
-import { parseInventory } from '../src/core/schema.js';
-import { statusAll, type ZoneReport } from '../src/core/status.js';
-import type { DataStore } from '../src/core/store.js';
+import { run } from '../../src/modules/security/cli/run.js';
+import { render, type Phase } from '../../src/modules/security/core/render.js';
+import { parseInventory } from '../../src/modules/security/core/schema.js';
+import { statusAll, type ZoneReport } from '../../src/modules/security/core/status.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
 import { FakeCloudflareApi, liveFromDesired } from './fake-api.js';
 import { defaultBaseline, legacyCase, memoryStore, putBaseline, putInventory } from './helpers.js';
 

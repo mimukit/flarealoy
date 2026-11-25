@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-const CORE = fileURLToPath(new URL('../src/core/', import.meta.url));
+const CORE = fileURLToPath(new URL('../../src/modules/security/core/', import.meta.url));
 const FORBIDDEN = [/from ['"]node:/, /from ['"](fs|path|os|url|util|child_process)['"]/, /\bprocess\./, /\bBuffer\b/, /\brequire\(/];
 
 describe('core purity', () => {

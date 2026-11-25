@@ -1,13 +1,13 @@
 // The TUI reducer: one test per key map row in Phase 2 scope, plus the data events.
 import { describe, expect, it } from 'vitest';
-import type { Change } from '../src/core/diff.js';
-import type { Phase } from '../src/core/render.js';
-import { parseInventory, type Inventory } from '../src/core/schema.js';
-import type { ZoneReport } from '../src/core/status.js';
-import { KEYMAP } from '../src/tui/keymap.js';
-import { applyOutcomeText, planLines } from '../src/cli/format.js';
-import type { ZonePlan } from '../src/core/apply.js';
-import { outcomeText, canAdd, canRun, diffPaneLines, diffPaneTitle, listNotice, headerCounts, initialState, markSummary, planLabel, listWidth, rowCells, stateLabel, update, visibleRows, zoneCard, zonesPaneWidth, type Effect, type TuiData, type TuiEvent, type TuiState } from '../src/tui/state.js';
+import type { Change } from '../../src/modules/security/core/diff.js';
+import type { Phase } from '../../src/modules/security/core/render.js';
+import { parseInventory, type Inventory } from '../../src/modules/security/core/schema.js';
+import type { ZoneReport } from '../../src/modules/security/core/status.js';
+import { KEYMAP } from '../../src/modules/security/tui/keymap.js';
+import { applyOutcomeText, planLines } from '../../src/modules/security/cli/format.js';
+import type { ZonePlan } from '../../src/modules/security/core/apply.js';
+import { outcomeText, canAdd, canRun, diffPaneLines, diffPaneTitle, listNotice, headerCounts, initialState, markSummary, planLabel, listWidth, rowCells, stateLabel, update, visibleRows, zoneCard, zonesPaneWidth, type Effect, type TuiData, type TuiEvent, type TuiState } from '../../src/modules/security/tui/state.js';
 import { defaultBaseline } from './helpers.js';
 
 const CUSTOM: Phase = 'http_request_firewall_custom';

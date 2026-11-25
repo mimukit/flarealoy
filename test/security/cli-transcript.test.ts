@@ -5,11 +5,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { run, type RunDeps } from '../src/cli/run.js';
-import { render } from '../src/core/render.js';
-import { parseInventory } from '../src/core/schema.js';
-import type { DataStore } from '../src/core/store.js';
-import type { Editor } from '../src/node/edit.js';
+import { run, type RunDeps } from '../../src/modules/security/cli/run.js';
+import { render } from '../../src/modules/security/core/render.js';
+import { parseInventory } from '../../src/modules/security/core/schema.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
+import type { Editor } from '../../src/modules/security/node/edit.js';
 import { FakeCloudflareApi, liveFromDesired } from './fake-api.js';
 import { defaultBaseline, memoryStore, putBaseline, putInventory } from './helpers.js';
 
@@ -295,7 +295,7 @@ describe('propose, approve, and reject', () => {
     expect({ proposed, approved, log }).toMatchSnapshot();
   });
   it('propose the baseline from stdin with --author, then reject', async () => {
-    stdin = readFileSync(new URL('../src/baseline/default.yaml', import.meta.url), 'utf8').replace('version: 1', 'version: 1\n# tuned');
+    stdin = readFileSync(new URL('../../src/modules/security/baseline/default.yaml', import.meta.url), 'utf8').replace('version: 1', 'version: 1\n# tuned');
     const proposed = await cli(['propose', '--baseline', '-', '--author', 'claude']);
     const rejected = await cli(['reject', '#4']);
     const approveRejected = await cli(['approve', '4']);

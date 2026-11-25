@@ -1,7 +1,7 @@
 // The TUI colours: the line colour rules match the text the shared CLI formatters print.
 import { describe, expect, it } from 'vitest';
-import { changeLine, foreignLine, stepLine } from '../src/cli/format.js';
-import { lineColor, MOCHA, STATE_COLOR } from '../src/tui/theme.js';
+import { changeLine, foreignLine, stepLine } from '../../src/modules/security/cli/format.js';
+import { lineColor, MOCHA, STATE_COLOR } from '../../src/modules/security/tui/theme.js';
 
 describe('TUI theme', () => {
   it('gives each state its Catppuccin Mocha colour', () => {

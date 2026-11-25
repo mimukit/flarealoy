@@ -1,8 +1,8 @@
 // `flarewall tui` loads Ink and React with a dynamic import, so no other command loads them.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { run } from '../src/cli/run.js';
+import { run } from '../../src/modules/security/cli/run.js';
 import { FakeCloudflareApi } from './fake-api.js';
-import type { DataStore } from '../src/core/store.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
 import { memoryStore, putBaseline } from './helpers.js';
 
 const loads = vi.hoisted(() => ({ ink: 0, react: 0 }));

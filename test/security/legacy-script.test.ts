@@ -10,7 +10,7 @@
 //  - enabled on custom and rate rules: the script omits it, and Cloudflare defaults it to true.
 //    flarewall sends enabled: true. Redirect rules compare enabled, since the script sends it.
 import { describe, expect, it } from 'vitest';
-import { render } from '../src/core/render.js';
+import { render } from '../../src/modules/security/core/render.js';
 import { defaultBaseline, legacyCase } from './helpers.js';
 
 const pick = (rule: Record<string, unknown>, keys: string[]) =>

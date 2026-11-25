@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { parseBaseline, parseInventory, SchemaError } from '../src/core/schema.js';
+import { parseBaseline, parseInventory, SchemaError } from '../../src/modules/security/core/schema.js';
 import { DEFAULT_BASELINE_FILE, defaultBaseline, readFixture } from './helpers.js';
 
 const INVENTORY = readFixture('legacy-script/api-wordpress-geo-root/inventory.yaml');

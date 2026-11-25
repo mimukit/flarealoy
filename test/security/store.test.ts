@@ -5,9 +5,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { SCHEMA_VERSION } from '../src/core/store-sql.js';
-import { exportText, parseExport, type DataStore, type DocRef } from '../src/core/store.js';
-import { MEMORY, openSqliteStore, resolveDbPath, sha256 } from '../src/node/sqlite-store.js';
+import { SCHEMA_VERSION } from '../../src/modules/security/core/store-sql.js';
+import { exportText, parseExport, type DataStore, type DocRef } from '../../src/modules/security/core/store.js';
+import { MEMORY, openSqliteStore, resolveDbPath, sha256 } from '../../src/modules/security/node/sqlite-store.js';
 
 const BASELINE: DocRef = { kind: 'baseline', zone: null };
 const COM: DocRef = { kind: 'inventory', zone: 'example.com' };

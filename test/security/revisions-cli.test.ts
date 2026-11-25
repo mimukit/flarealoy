@@ -3,11 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { run, type RunDeps } from '../src/cli/run.js';
-import { textDiff } from '../src/core/revisions.js';
-import type { DataStore } from '../src/core/store.js';
-import type { Editor } from '../src/node/edit.js';
-import { isSqliteWarning } from '../src/node/warnings.js';
+import { run, type RunDeps } from '../../src/modules/security/cli/run.js';
+import { textDiff } from '../../src/modules/security/core/revisions.js';
+import type { DataStore } from '../../src/modules/security/core/store.js';
+import type { Editor } from '../../src/modules/security/node/edit.js';
+import { isSqliteWarning } from '../../src/modules/security/node/warnings.js';
 import { memoryStore, putBaseline, putInventory } from './helpers.js';
 
 const ID = '023e105f4ecef8ad9ca31a8372d0c353';
@@ -101,7 +101,7 @@ describe('propose, approve, and reject', () => {
   });
 
   it('reads stdin for -, takes --author, and proposes the baseline', async () => {
-    stdin = readFileSync(new URL('../src/baseline/default.yaml', import.meta.url), 'utf8').replace('version: 1', 'version: 1\n# tuned');
+    stdin = readFileSync(new URL('../../src/modules/security/baseline/default.yaml', import.meta.url), 'utf8').replace('version: 1', 'version: 1\n# tuned');
     expect((await cli(['propose', '--baseline', '-', '--author', 'claude'])).out).toBe('pending revision 3');
     expect(await store.getRevision(3)).toMatchObject({ kind: 'baseline', zone: null, author: 'claude' });
     expect((await cli(['reject', '#3'])).out).toBe('rejected revision 3 (baseline)');

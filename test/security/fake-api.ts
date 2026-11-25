@@ -1,6 +1,6 @@
 // An in-memory CloudflareApi. It records every write call and can fail a chosen call per zone.
-import type { BotManagementState, CloudflareApi, LiveRule, SettingId, ZoneSummary } from '../src/core/api.js';
-import type { DesiredZone, DnsRecord, Phase } from '../src/core/render.js';
+import type { BotManagementState, CloudflareApi, LiveRule, SettingId, ZoneSummary } from '../../src/modules/security/core/api.js';
+import type { DesiredZone, DnsRecord, Phase } from '../../src/modules/security/core/render.js';
 
 export interface FakeZone {
   summary: ZoneSummary;
