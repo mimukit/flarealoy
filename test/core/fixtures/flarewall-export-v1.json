@@ -1,0 +1,137 @@
+{
+  "flarewall_export": 1,
+  "schema_version": 1,
+  "revisions": [
+    {
+      "id": 1,
+      "kind": "baseline",
+      "zone": null,
+      "parent_id": null,
+      "status": "approved",
+      "text": "version: 1\n# a short baseline for the fixture\nrules: []\n",
+      "sha256": "58c70b397509d4dbf1091852d9f2c453c3ce6c9bcb8d2e0cdb94caf7393e843c",
+      "author": "owner",
+      "message": "flarewall init",
+      "created_at": "2026-10-22T08:00:00.000Z",
+      "decided_at": "2026-10-22T08:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "kind": "inventory",
+      "zone": "example.com",
+      "parent_id": null,
+      "status": "approved",
+      "text": "version: 1\nzone: example.com\nzone_id: \"023e105f4ecef8ad9ca31a8372d0c353\"\nhosts:\n  api: []\n  wordpress: []\nredirects: root\n",
+      "sha256": "df0dd716666211295bde7aaafe504f9b0cb1b243e1f6ca804c97e52cc8f1769d",
+      "author": "owner",
+      "message": "flarewall add",
+      "created_at": "2026-10-22T08:01:00.000Z",
+      "decided_at": "2026-10-22T08:01:00.000Z"
+    },
+    {
+      "id": 3,
+      "kind": "inventory",
+      "zone": "example.net",
+      "parent_id": null,
+      "status": "approved",
+      "text": "version: 1\nzone: example.net\nzone_id: \"0123456789abcdef0123456789abcdef\"\nhosts:\n  api: [api.example.net]\n  wordpress: []\nredirects: root\n",
+      "sha256": "063c1c2de610fac403d9a87f9da85d9e2211fe2d2507c94ea20449fc3017e339",
+      "author": "owner",
+      "message": "flarewall add",
+      "created_at": "2026-10-22T08:02:00.000Z",
+      "decided_at": "2026-10-22T08:02:00.000Z"
+    },
+    {
+      "id": 4,
+      "kind": "inventory",
+      "zone": "example.com",
+      "parent_id": 2,
+      "status": "approved",
+      "text": "version: 1\nzone: example.com\nzone_id: \"023e105f4ecef8ad9ca31a8372d0c353\"\nhosts:\n  api: [api.example.com]\n  wordpress: []\nredirects: root\n",
+      "sha256": "92dee4fca211b0b7ed54743914f04f7044cc66fbcf58f0681436dac229efa13d",
+      "author": "skill",
+      "message": "add the api host",
+      "created_at": "2026-10-23T10:00:00.000Z",
+      "decided_at": "2026-10-23T11:30:00.000Z"
+    },
+    {
+      "id": 5,
+      "kind": "inventory",
+      "zone": "example.com",
+      "parent_id": 4,
+      "status": "rejected",
+      "text": "version: 1\nzone: example.com\nzone_id: \"023e105f4ecef8ad9ca31a8372d0c353\"\nhosts:\n  api: [api.example.com]\n  wordpress: [blog.example.com]\nredirects: root\n",
+      "sha256": "a5799d5635febcab3fcd7f1d858f08608e6ff2546deb847acd1f842216052e96",
+      "author": "skill",
+      "message": null,
+      "created_at": "2026-10-24T10:00:00.000Z",
+      "decided_at": "2026-10-24T12:00:00.000Z"
+    },
+    {
+      "id": 6,
+      "kind": "inventory",
+      "zone": "example.com",
+      "parent_id": 4,
+      "status": "pending",
+      "text": "version: 1\nzone: example.com\nzone_id: \"023e105f4ecef8ad9ca31a8372d0c353\"\nhosts:\n  api: [api.example.com]\n  wordpress: [blog.example.com]\nredirects: root\n",
+      "sha256": "a5799d5635febcab3fcd7f1d858f08608e6ff2546deb847acd1f842216052e96",
+      "author": "skill",
+      "message": "add the blog host",
+      "created_at": "2026-10-25T10:00:00.000Z",
+      "decided_at": null
+    }
+  ],
+  "backups": [
+    {
+      "id": 1,
+      "zone": "example.com",
+      "zone_id": "023e105f4ecef8ad9ca31a8372d0c353",
+      "created_at": "2026-10-23T12:00:00.000Z",
+      "backup": "{\"phases\":{\"http_ratelimit\":[]},\"settings\":{\"always_use_https\":\"off\"}}"
+    }
+  ],
+  "runs": [
+    {
+      "id": 1,
+      "created_at": "2026-10-23T09:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "created_at": "2026-10-24T09:00:00.000Z"
+    }
+  ],
+  "run_zones": [
+    {
+      "id": 1,
+      "run_id": 1,
+      "zone": "example.com",
+      "state": "drift",
+      "changes": 3,
+      "error": null
+    },
+    {
+      "id": 2,
+      "run_id": 1,
+      "zone": "example.net",
+      "state": "in sync",
+      "changes": 0,
+      "error": null
+    },
+    {
+      "id": 3,
+      "run_id": 2,
+      "zone": "example.com",
+      "state": "in sync",
+      "changes": 0,
+      "error": null
+    },
+    {
+      "id": 4,
+      "run_id": 2,
+      "zone": "example.net",
+      "state": "error",
+      "changes": 0,
+      "error": "403: token lacks DNS read"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 // Fails when a file in the repo contains a private string.
 //
-// FLAREWALL_PRIVATE_STRINGS holds the strings, one per line. The match is case-insensitive.
+// FLAREALOY_PRIVATE_STRINGS holds the strings, one per line. The match is case-insensitive.
 // The check scans every tracked file plus untracked files that git does not ignore, so a
 // local run also covers new files. It exits 2 when the list is empty or missing, so a
 // missing CI secret never passes as clean. It prints the file, the line, and the list
@@ -8,13 +8,13 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, statSync } from 'node:fs';
 
-const strings = (process.env.FLAREWALL_PRIVATE_STRINGS ?? '')
+const strings = (process.env.FLAREALOY_PRIVATE_STRINGS ?? '')
   .split(/\r?\n/)
   .map((s) => s.trim().toLowerCase())
   .filter((s) => s !== '');
 
 if (strings.length === 0) {
-  console.error('FLAREWALL_PRIVATE_STRINGS is empty or not set. Set it to the private strings, one per line.');
+  console.error('FLAREALOY_PRIVATE_STRINGS is empty or not set. Set it to the private strings, one per line.');
   process.exit(2);
 }
 

@@ -1,76 +1,44 @@
-// Node-only adapter: the DataStore on one local SQLite file, through node:sqlite.
+// Node-only adapter: the one flarealoy database, a local SQLite file, through node:sqlite.
 // The file holds private data, so it gets mode 0600 in a 0700 directory. The journal mode is
-// DELETE, so a plain copy of the one file while no flarewall command runs is a full backup.
-import { createHash } from 'node:crypto';
+// DELETE, so a plain copy of the one file while no flarealoy command runs is a full backup.
+// It runs the migrations of the core and of every registered module, and exports and imports
+// every registered table. Each module builds its own store on the database handle.
 import { chmodSync, closeSync, existsSync, mkdirSync, openSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
-import type { ZoneState } from '../core/diff.js';
-import { EXPORT_TABLES, MIGRATIONS, SCHEMA_VERSION, SQL, type ExportTable } from '../core/store-sql.js';
-import {
-  StoreError,
-  staleMessage,
-  type BackupRow,
-  type DataStore,
-  type DocKind,
-  type DocRef,
-  type NewRevision,
-  type Revision,
-  type RevisionStatus,
-  type Run,
-  type RunZone,
-  type StoreExport,
-} from '../core/store.js';
+import { CORE, CORE_MIGRATIONS, CORE_SQL, LEGACY_VERSION_KEY, LEGACY_VERSION_MODULE, versionKey } from '../core/store-sql.js';
+import { StoreError, type DatabaseExport, type ExportRow, type StoreModule } from '../core/store.js';
+import { MODULES } from './modules.js';
 
 /** The in-memory database, for tests. */
 export const MEMORY = ':memory:';
 
-/** Wait this long for a lock held by another flarewall process before failing. */
+/** Wait this long for a lock held by another flarealoy process before failing. */
 export const BUSY_TIMEOUT_MS = 5000;
 
+export const NEWER_SCHEMA = 'the database schema is newer than this flarealoy; upgrade flarealoy';
+
 /**
- * The database file: FLAREWALL_DB, else $XDG_DATA_HOME/flarewall/flarewall.sqlite, else
- * ~/.local/share/flarewall/flarewall.sqlite.
+ * The database file: FLAREALOY_DB, else $XDG_DATA_HOME/flarealoy/flarealoy.sqlite, else
+ * ~/.local/share/flarealoy/flarealoy.sqlite.
  */
 export function resolveDbPath(env: Record<string, string | undefined>): string {
-  if (env.FLAREWALL_DB !== undefined && env.FLAREWALL_DB !== '') return env.FLAREWALL_DB;
+  if (env.FLAREALOY_DB !== undefined && env.FLAREALOY_DB !== '') return env.FLAREALOY_DB;
   const dataHome = env.XDG_DATA_HOME !== undefined && env.XDG_DATA_HOME !== '' ? env.XDG_DATA_HOME : join(env.HOME || homedir(), '.local', 'share');
-  return join(dataHome, 'flarewall', 'flarewall.sqlite');
+  return join(dataHome, 'flarealoy', 'flarealoy.sqlite');
 }
 
-export function sha256(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex');
-}
-
-export interface OpenOptions {
+export interface OpenDatabaseOptions {
   /** Create the file and its directory when missing (init and import). Default: false. */
   create?: boolean;
-  /** The clock for every timestamp. Default: the system clock. */
-  now?: () => Date;
+  /** The command that the missing-file message names. Default: `flarealoy init`. */
+  initCommand?: string;
+  /** The registered modules. Default: the registry. */
+  modules?: readonly StoreModule[];
 }
 
 type Row = Record<string, SQLInputValue>;
-
-function toRevision(row: Row): Revision {
-  return {
-    id: Number(row.id),
-    kind: row.kind as DocKind,
-    zone: row.zone as string | null,
-    parentId: row.parent_id === null ? null : Number(row.parent_id),
-    status: row.status as RevisionStatus,
-    text: row.text as string,
-    sha256: row.sha256 as string,
-    author: row.author as string,
-    message: row.message as string | null,
-    createdAt: row.created_at as string,
-    decidedAt: row.decided_at as string | null,
-  };
-}
-
-function toBackup(row: Row): BackupRow {
-  return { id: Number(row.id), zone: row.zone as string, zoneId: row.zone_id as string, createdAt: row.created_at as string, backup: row.backup as string };
-}
 
 /** Creates the file with mode 0600 (and its directory with 0700) when it is missing. */
 function createFile(path: string): void {
@@ -80,176 +48,131 @@ function createFile(path: string): void {
 }
 
 /**
- * Opens the store at `path` (or MEMORY), applies the missing migrations, and checks the schema
- * version. Throws StoreError when the file is missing and `create` is not set, and when the file
- * comes from a newer flarewall.
+ * Opens the database at `path` (or MEMORY), checks every schema version, and applies the missing
+ * migrations. Throws StoreError when the file is missing and `create` is not set, and when the
+ * file comes from a newer flarealoy.
  */
-export function openSqliteStore(path: string, options: OpenOptions = {}): DataStore {
-  const now = options.now ?? (() => new Date());
-  const stamp = () => now().toISOString();
-  if (path !== MEMORY) {
-    if (!existsSync(path)) {
-      if (options.create !== true) throw new StoreError(`no flarewall database at ${path}; run flarewall init`);
-      createFile(path);
-    }
+export function openDatabase(path: string, options: OpenDatabaseOptions = {}): DatabaseSync {
+  if (path !== MEMORY && !existsSync(path)) {
+    if (options.create !== true) throw new StoreError(`no flarealoy database at ${path}; run ${options.initCommand ?? 'flarealoy init'}`);
+    createFile(path);
   }
   const db = new DatabaseSync(path);
   try {
     db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
     db.exec('PRAGMA journal_mode = DELETE');
     db.exec('PRAGMA foreign_keys = ON');
-    migrate(db);
+    migrate(db, options.modules ?? MODULES);
   } catch (error) {
     db.close();
     throw error;
   }
-
-  /** Runs `body` in one BEGIN IMMEDIATE transaction: it takes the write lock before the first read. */
-  const immediate = <T>(body: () => T): T => {
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      const result = body();
-      db.exec('COMMIT');
-      return result;
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
-    }
-  };
-  const all = (sql: string, ...params: SQLInputValue[]) => db.prepare(sql).all(...params) as Row[];
-  const one = (sql: string, ...params: SQLInputValue[]) => db.prepare(sql).get(...params) as Row | undefined;
-  const current = (doc: DocRef) => {
-    const row = one(SQL.currentRevision, doc.kind, doc.zone);
-    return row === undefined ? undefined : toRevision(row);
-  };
-
-  return {
-    location: path,
-    current: async (doc) => current(doc),
-    currentInventories: async () => all(SQL.currentInventories).map(toRevision),
-    listRevisions: async (filter = {}) =>
-      (filter.zone === undefined ? all(SQL.listRevisions) : all(SQL.listZoneRevisions, filter.zone)).map(toRevision),
-    getRevision: async (id) => {
-      const row = one(SQL.getRevision, id);
-      return row === undefined ? undefined : toRevision(row);
-    },
-    pending: async (doc) => all(SQL.pendingRevisions, doc.kind, doc.zone).map(toRevision),
-    addRevision: async (revision: NewRevision) =>
-      immediate(() => {
-        if ((revision.kind === 'baseline') !== (revision.zone === null)) throw new StoreError('a baseline revision has no zone, and an inventory revision has one');
-        const at = stamp();
-        const parent = current(revision);
-        const row = one(
-          SQL.insertRevision,
-          revision.kind,
-          revision.zone,
-          parent?.id ?? null,
-          revision.status,
-          revision.text,
-          sha256(revision.text),
-          revision.author,
-          revision.message ?? null,
-          at,
-          revision.status === 'approved' ? at : null,
-        );
-        return toRevision(row as Row);
-      }),
-    decide: async (id, status) =>
-      immediate(() => {
-        const row = one(SQL.getRevision, id);
-        if (row === undefined) throw new StoreError(`no revision ${id}`);
-        const revision = toRevision(row);
-        if (revision.status !== 'pending') throw new StoreError(`revision ${id} is ${revision.status}, not pending`);
-        if (status === 'approved') {
-          const head = current(revision);
-          if ((head?.id ?? null) !== revision.parentId) throw new StoreError(staleMessage(id, revision.parentId, head?.id ?? null));
-        }
-        return toRevision(one(SQL.decideRevision, status, stamp(), id) as Row);
-      }),
-    addBackup: async (zone, zoneId, backup) => toBackup(one(SQL.insertBackup, zone, zoneId, stamp(), backup) as Row),
-    listBackups: async (zone) => all(SQL.listBackups, zone).map(toBackup),
-    getBackup: async (id) => {
-      const row = one(SQL.getBackup, id);
-      return row === undefined ? undefined : toBackup(row);
-    },
-    addRun: async (zones: RunZone[]) =>
-      immediate(() => {
-        const run = one(SQL.insertRun, stamp()) as Row;
-        const insert = db.prepare(SQL.insertRunZone);
-        for (const z of zones) insert.run(run.id as number, z.zone, z.state, z.changes, z.error);
-        return { id: Number(run.id), createdAt: run.created_at as string, zones };
-      }),
-    listRuns: async () => {
-      const zones = all(SQL.listRunZones);
-      return all(SQL.listRuns).map(
-        (run): Run => ({
-          id: Number(run.id),
-          createdAt: run.created_at as string,
-          zones: zones
-            .filter((z) => z.run_id === run.id)
-            .map((z) => ({ zone: z.zone as string, state: z.state as ZoneState, changes: Number(z.changes), error: z.error as string | null })),
-        }),
-      );
-    },
-    isEmpty: async () => isEmpty(db),
-    exportData: async () => {
-      const rows = (table: ExportTable) => all(SQL.exportRows(table));
-      // Build each row in column order, so the export has a fixed key order.
-      const ordered = (table: ExportTable) =>
-        rows(table).map((row) => Object.fromEntries(EXPORT_TABLES[table].map((column) => [column, row[column] ?? null])));
-      return {
-        flarewall_export: 1,
-        schema_version: SCHEMA_VERSION,
-        revisions: ordered('revisions'),
-        backups: ordered('backups'),
-        runs: ordered('runs'),
-        run_zones: ordered('run_zones'),
-      } as StoreExport;
-    },
-    importData: async (data) =>
-      immediate(() => {
-        if (data.schema_version !== SCHEMA_VERSION) {
-          throw new StoreError(`the export has schema version ${data.schema_version}, but this flarewall writes ${SCHEMA_VERSION}`);
-        }
-        if (!isEmpty(db)) throw new StoreError(`${path} is not empty; flarewall import loads into an empty database only`);
-        for (const table of Object.keys(EXPORT_TABLES) as ExportTable[]) {
-          const insert = db.prepare(SQL.importRow(table));
-          for (const row of data[table]) {
-            insert.run(...EXPORT_TABLES[table].map((column) => (row as Record<string, SQLInputValue>)[column] ?? null));
-          }
-        }
-      }),
-    close: () => db.close(),
-  };
+  return db;
 }
 
-function isEmpty(db: DatabaseSync): boolean {
-  return (Object.keys(EXPORT_TABLES) as ExportTable[]).every((table) => (db.prepare(SQL.countRows(table)).get() as Row).n === 0);
-}
-
-/** Applies the missing migrations in order, each in one transaction with its version bump. */
-function migrate(db: DatabaseSync): void {
-  const version = () => {
-    if ((db.prepare(SQL.hasMeta).get() as Row).n === 0) return 0;
-    const row = db.prepare(SQL.getVersion).get() as Row | undefined;
-    return row === undefined ? 0 : Number(row.value);
-  };
-  let at = version();
-  if (at > SCHEMA_VERSION) throw new StoreError('the database schema is newer than this flarewall; upgrade flarewall');
-  while (at < SCHEMA_VERSION) {
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      // Read again inside the lock: another process may have migrated meanwhile.
-      at = version();
-      if (at < SCHEMA_VERSION) {
-        db.exec(MIGRATIONS[at] as string);
-        db.prepare(SQL.setVersion).run(String(at + 1));
-      }
-      db.exec('COMMIT');
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
-    }
-    at = version();
+/** Runs `body` in one BEGIN IMMEDIATE transaction: it takes the write lock before the first read. */
+export function immediate<T>(db: DatabaseSync, body: () => T): T {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const result = body();
+    db.exec('COMMIT');
+    return result;
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
   }
+}
+
+const hasMeta = (db: DatabaseSync) => (db.prepare(CORE_SQL.hasMeta).get() as Row).n !== 0;
+
+function readVersion(db: DatabaseSync, name: string): number {
+  if (!hasMeta(db)) return 0;
+  const row = db.prepare(CORE_SQL.getVersion).get(versionKey(name)) as Row | undefined;
+  return row === undefined ? 0 : Number(row.value);
+}
+
+/**
+ * Stops before any write when a version key is newer than this build knows: a newer core, a newer
+ * module, a module this build does not have, or a newer old flarewall key.
+ */
+function checkVersions(db: DatabaseSync, modules: readonly StoreModule[]): void {
+  if (!hasMeta(db)) return;
+  const known = new Map<string, number>([[CORE, CORE_MIGRATIONS.length], ...modules.map((m): [string, number] => [m.name, m.migrations.length])]);
+  for (const row of db.prepare(CORE_SQL.versionKeys).all() as Row[]) {
+    const key = row.key as string;
+    const name = key === LEGACY_VERSION_KEY ? LEGACY_VERSION_MODULE : key.slice(versionKey('').length);
+    const latest = known.get(name);
+    if (latest === undefined || Number(row.value) > latest) throw new StoreError(NEWER_SCHEMA);
+  }
+}
+
+/** Applies the missing migrations of one module in order, each in one transaction with its version bump. */
+function migrateOne(db: DatabaseSync, name: string, migrations: readonly string[]): void {
+  let at = readVersion(db, name);
+  if (at > migrations.length) throw new StoreError(NEWER_SCHEMA);
+  while (at < migrations.length) {
+    immediate(db, () => {
+      // Read again inside the lock: another process may have migrated meanwhile.
+      const now = readVersion(db, name);
+      if (now < migrations.length) {
+        db.exec(migrations[now] as string);
+        db.prepare(CORE_SQL.setVersion).run(versionKey(name), String(now + 1));
+      }
+    });
+    at = readVersion(db, name);
+  }
+}
+
+/**
+ * The migration runner. On a file with a meta table, the core goes first, so an old flarewall key
+ * moves to `schema_version.security` before the security module reads it. On a file with none,
+ * the modules go first (security migration 1 creates meta), then the core.
+ */
+function migrate(db: DatabaseSync, modules: readonly StoreModule[]): void {
+  checkVersions(db, modules);
+  const core = { name: CORE, migrations: CORE_MIGRATIONS };
+  const order = hasMeta(db) ? [core, ...modules] : [...modules, core];
+  for (const step of order) migrateOne(db, step.name, step.migrations);
+}
+
+/** True when every table of every module has zero rows. */
+export function isEmpty(db: DatabaseSync, modules: readonly StoreModule[] = MODULES): boolean {
+  return modules.every((m) => Object.keys(m.tables).every((table) => (db.prepare(CORE_SQL.countRows(table)).get() as Row).n === 0));
+}
+
+/** Every table of every module, with the schema version of the core and of each module. */
+export function exportDatabase(db: DatabaseSync, modules: readonly StoreModule[] = MODULES): DatabaseExport {
+  const versions: Record<string, number> = { [CORE]: readVersion(db, CORE) };
+  const tables: Record<string, ExportRow[]> = {};
+  for (const module of modules) {
+    versions[module.name] = readVersion(db, module.name);
+    for (const [name, table] of Object.entries(module.tables)) {
+      // Build each row in column order, so the export has a fixed key order.
+      tables[name] = (db.prepare(CORE_SQL.exportRows(name, table.columns)).all() as Row[]).map((row) =>
+        Object.fromEntries(table.columns.map((column) => [column, row[column] ?? null])),
+      );
+    }
+  }
+  return { flarealoy_export: 1, schema_versions: versions, tables };
+}
+
+/**
+ * Loads an export into an empty database in one transaction, keeping ids and timestamps. Each
+ * module in the export must be at the version this flarealoy writes. `location` names the
+ * database in the not-empty message.
+ */
+export function importDatabase(db: DatabaseSync, data: DatabaseExport, location: string, modules: readonly StoreModule[] = MODULES): void {
+  immediate(db, () => {
+    for (const [name, version] of Object.entries(data.schema_versions)) {
+      const latest = name === CORE ? CORE_MIGRATIONS.length : modules.find((m) => m.name === name)?.migrations.length;
+      if (version !== latest) throw new StoreError(`the export has ${name} schema version ${version}, but this flarealoy writes ${latest ?? 'no such module'}`);
+    }
+    if (!isEmpty(db, modules)) throw new StoreError(`${location} is not empty; flarealoy import loads into an empty database only`);
+    for (const module of modules) {
+      for (const [name, table] of Object.entries(module.tables)) {
+        const insert = db.prepare(CORE_SQL.importRow(name, table.columns));
+        for (const row of data.tables[name] ?? []) insert.run(...table.columns.map((column) => (row[column] ?? null) as SQLInputValue));
+      }
+    }
+  });
 }

@@ -1,0 +1,1091 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`add > refuses a zone that has an inventory, a zone the token cannot see, and bad arguments 1`] = `
+{
+  "existing": {
+    "code": 2,
+    "err": "example.com already has inventory revision 2; flarealoy security add does not overwrite it",
+    "out": "",
+  },
+  "none": {
+    "code": 2,
+    "err": "add takes exactly one zone name",
+    "out": "",
+  },
+  "two": {
+    "code": 2,
+    "err": "add takes exactly one zone name",
+    "out": "",
+  },
+  "unseen": {
+    "code": 2,
+    "err": "zone other.example.net not found: the token cannot see it",
+    "out": "",
+  },
+}
+`;
+
+exports[`add > writes the first inventory revision of a visible zone 1`] = `
+{
+  "added": {
+    "code": 0,
+    "err": "",
+    "out": "saved example.com inventory revision 2; sort its hosts with flarealoy security edit example.com",
+  },
+  "show": {
+    "code": 0,
+    "err": "",
+    "out": "# revision 2: example.com inventory, approved, by owner, 2026-10-22T09:00:04.000Z
+# parent none, sha256 7e169ef87a0926da7fc187ef4296e5fea9e39982ae38f403aa4517976760be7f
+# message: flarealoy security add
+# Inventory for example.com, written by flarewall add.
+# Put each host below in hosts.api or hosts.wordpress where it fits, then check redirects.
+# Proxied hostnames in this zone:
+#   api.example.com
+#   example.com
+version: 1
+zone: example.com
+zone_id: "023e105f4ecef8ad9ca31a8372d0c353"
+hosts:
+  api: []
+  wordpress: []
+redirects: root",
+  },
+}
+`;
+
+exports[`apply > --write --yes sends the writes and backs up first 1`] = `
+{
+  "result": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: backup 1 saved
+example.com: applied, read-back in sync",
+  },
+  "status": {
+    "code": 0,
+    "err": "",
+    "out": "ZONE         PLAN          STATE
+example.com  Free Website  in sync
+example.net  Free Website  in sync",
+  },
+  "writes": 6,
+}
+`;
+
+exports[`apply > --write with a TTY asks per zone, and a no answer declines 1`] = `
+{
+  "code": 0,
+  "err": "",
+  "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: declined, nothing sent",
+}
+`;
+
+exports[`apply > dry run of one zone, then of --all 1`] = `
+{
+  "all": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: dry run, nothing sent; pass --write to send
+example.net: in sync, nothing to send",
+  },
+  "one": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: plan
+  http_request_firewall_custom: send 3 rules (3 owned, 0 unowned)
+    create flarewall_ports
+    create flarewall_probes
+    create flarewall_hosting
+  http_ratelimit: send 1 rules (1 owned, 0 unowned)
+    create flarewall_rate_limit
+  http_request_dynamic_redirect: send 2 rules (2 owned, 0 unowned)
+    create flarewall_https
+    create flarewall_canonical_host
+  setting always_use_https: "off" -> "on"
+  setting browser_check: "off" -> "on"
+  bot management: {"fight_mode":false,"enable_js":false} -> {"fight_mode":true,"enable_js":true}
+example.com: dry run, nothing sent; pass --write to send",
+  },
+  "writes": 0,
+}
+`;
+
+exports[`apply > error paths 1`] = `
+{
+  "both": {
+    "code": 2,
+    "err": "apply takes zone names or --all, not both",
+    "out": "",
+  },
+  "noInventory": {
+    "code": 2,
+    "err": "other.example.net: error: no inventory entry; run flarealoy security add other.example.net",
+    "out": "",
+  },
+  "noTty": {
+    "code": 2,
+    "err": "refusing to write: stdin is not a terminal, so flarealoy cannot ask per zone; pass --yes to write without asking",
+    "out": "",
+  },
+  "none": {
+    "code": 2,
+    "err": "apply needs zone names or --all",
+    "out": "",
+  },
+}
+`;
+
+exports[`edit > no change, emptied, and error paths 1`] = `
+{
+  "both": {
+    "code": 2,
+    "err": "edit takes one zone name, or --baseline",
+    "out": "",
+  },
+  "emptied": {
+    "code": 0,
+    "err": "",
+    "out": "baseline: the file was emptied; nothing saved",
+  },
+  "noArgs": {
+    "code": 2,
+    "err": "edit takes one zone name, or --baseline",
+    "out": "",
+  },
+  "noInventory": {
+    "code": 2,
+    "err": "run flarealoy security add other.example.net first",
+    "out": "",
+  },
+  "unchanged": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: no change; nothing saved",
+  },
+}
+`;
+
+exports[`edit > reopens an invalid text, then saves the fixed text 1`] = `
+{
+  "code": 0,
+  "err": "",
+  "out": "  ...
+  hosts:
+-   api: []
++   api: [api.example.com]
+    wordpress: []
+  ...
+saved example.com inventory revision 4",
+}
+`;
+
+exports[`edit > saves an edited inventory, with the diff 1`] = `
+{
+  "code": 0,
+  "err": "",
+  "out": "  ...
+  hosts:
+-   api: []
++   api: [api.example.com]
+    wordpress: []
+  ...
+saved example.com inventory revision 4",
+}
+`;
+
+exports[`export and import > error paths 1`] = `
+{
+  "exportArgs": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "importArgs": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "importBad": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "importMissing": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+}
+`;
+
+exports[`export and import > export, then import into a new file, then refuse a second import and an existing export file 1`] = `
+{
+  "again": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "exported": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "imported": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "log": {
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:00.000Z  baseline  approved  owner
+#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
+#3  2026-10-22T09:00:02.000Z  example.net inventory  approved  owner",
+  },
+  "second": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+}
+`;
+
+exports[`global error paths > --data set 1`] = `
+{
+  "code": 2,
+  "err": "--data is gone; flarealoy reads FLAREALOY_DB",
+  "out": "",
+}
+`;
+
+exports[`global error paths > FLAREWALL_DATA set 1`] = `
+{
+  "code": 2,
+  "err": "--data is gone; flarealoy reads FLAREALOY_DB",
+  "out": "",
+}
+`;
+
+exports[`global error paths > no database for every command that opens one 1`] = `
+{
+  "add example.com": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "apply --all": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "approve 1": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "backups example.com": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "diff": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "edit example.com": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "export <dir>/out.json": {
+    "code": 2,
+    "err": "moved: run flarealoy export",
+    "out": "",
+  },
+  "log": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "propose example.com -": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "reject 1": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "restore example.com 1": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "revert 1": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "show 1": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+  "status": {
+    "code": 2,
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
+    "out": "",
+  },
+}
+`;
+
+exports[`global error paths > no token for every command that needs one 1`] = `
+{
+  "add example.com": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "apply example.com": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "diff": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "status": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "tui": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+}
+`;
+
+exports[`init > creates the database, then refuses a second init 1`] = `
+{
+  "first": {
+    "code": 0,
+    "err": "",
+    "out": "baseline revision 1 written to <dir>/data/flarewall.sqlite",
+  },
+  "log": {
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:03.000Z  baseline  approved  owner  flarealoy security init",
+  },
+  "second": {
+    "code": 2,
+    "err": "the database at <dir>/data/flarewall.sqlite already holds a baseline; flarealoy security init does not overwrite it",
+    "out": "",
+  },
+}
+`;
+
+exports[`init > takes no arguments 1`] = `
+{
+  "code": 2,
+  "err": "init takes no arguments, got: extra",
+  "out": "",
+}
+`;
+
+exports[`log, show, and revert > log of every revision, of one zone, and of an unknown zone 1`] = `
+{
+  "all": {
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:00.000Z  baseline  approved  owner
+#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
+#3  2026-10-22T09:00:02.000Z  example.net inventory  approved  owner
+#4  2026-10-22T09:00:03.000Z  example.com inventory  pending  skill  api host",
+  },
+  "com": {
+    "code": 0,
+    "err": "",
+    "out": "#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
+#4  2026-10-22T09:00:03.000Z  example.com inventory  pending  skill  api host",
+  },
+  "tooMany": {
+    "code": 2,
+    "err": "log takes at most one zone name",
+    "out": "",
+  },
+  "unknown": {
+    "code": 0,
+    "err": "",
+    "out": "no revisions",
+  },
+}
+`;
+
+exports[`log, show, and revert > revert to an older revision, and error paths 1`] = `
+{
+  "badId": {
+    "code": 2,
+    "err": "revert takes one revision id",
+    "out": "",
+  },
+  "missing": {
+    "code": 2,
+    "err": "no revision 999",
+    "out": "",
+  },
+  "noChange": {
+    "code": 2,
+    "err": "example.com: no change",
+    "out": "",
+  },
+  "pending": {
+    "code": 2,
+    "err": "revision 6 is pending; only an approved revision can be restored",
+    "out": "",
+  },
+  "reverted": {
+    "code": 0,
+    "err": "",
+    "out": "saved example.com inventory revision 5",
+  },
+}
+`;
+
+exports[`log, show, and revert > show a revision, and a bad revision id 1`] = `
+{
+  "hash": {
+    "code": 0,
+    "err": "",
+    "out": "# revision 3: example.net inventory, approved, by owner, 2026-10-22T09:00:02.000Z
+# parent none, sha256 0dc07c7f518832be475181e6440206b3c7895932c7e050d6eb6533a4de5238a7
+version: 1
+zone: example.net
+zone_id: "0123456789abcdef0123456789abcdef"
+hosts:
+  api: [api.example.net]
+  wordpress: [blog.example.net]
+redirects: root",
+  },
+  "missing": {
+    "code": 2,
+    "err": "no revision 999",
+    "out": "",
+  },
+  "none": {
+    "code": 2,
+    "err": "show takes one revision id",
+    "out": "",
+  },
+  "two": {
+    "code": 0,
+    "err": "",
+    "out": "# revision 2: example.com inventory, approved, by owner, 2026-10-22T09:00:01.000Z
+# parent none, sha256 df0dd716666211295bde7aaafe504f9b0cb1b243e1f6ca804c97e52cc8f1769d
+version: 1
+zone: example.com
+zone_id: "023e105f4ecef8ad9ca31a8372d0c353"
+hosts:
+  api: []
+  wordpress: []
+redirects: root",
+  },
+  "word": {
+    "code": 2,
+    "err": "show takes one revision id",
+    "out": "",
+  },
+  "zero": {
+    "code": 2,
+    "err": "show takes one revision id",
+    "out": "",
+  },
+}
+`;
+
+exports[`propose, approve, and reject > a stale pending revision 1`] = `
+{
+  "approve": {
+    "code": 2,
+    "err": "revision 4 is based on 2, but the current revision is 5; propose it again",
+    "out": "",
+  },
+  "edit": {
+    "code": 0,
+    "err": "",
+    "out": "  ...
+    wordpress: []
+- redirects: root
++ redirects: www
+
+saved example.com inventory revision 5
+pending revisions now stale (approval will refuse them): #4",
+  },
+  "proposed": {
+    "code": 0,
+    "err": "",
+    "out": "pending revision 4",
+  },
+}
+`;
+
+exports[`propose, approve, and reject > error paths 1`] = `
+{
+  "approveArgs": {
+    "code": 2,
+    "err": "approve takes one revision id",
+    "out": "",
+  },
+  "approveBadId": {
+    "code": 2,
+    "err": "approve takes one revision id",
+    "out": "",
+  },
+  "approveMissing": {
+    "code": 2,
+    "err": "no revision 999",
+    "out": "",
+  },
+  "invalid": {
+    "code": 2,
+    "err": "example.com: invalid inventory:
+✖ Invalid input: expected 1
+  → at version
+✖ Invalid input: expected string, received undefined
+  → at zone
+✖ Invalid input: expected string, received undefined
+  → at zone_id
+✖ Invalid option: expected one of "root"|"www"|"https"|"skip"
+  → at redirects",
+    "out": "",
+  },
+  "missingFile": {
+    "code": 2,
+    "err": "error: ENOENT: no such file or directory, open '<dir>/nope.yaml'",
+    "out": "",
+  },
+  "noArgs": {
+    "code": 2,
+    "err": "propose takes a zone name and a file, or --baseline and a file; the file can be - for stdin",
+    "out": "",
+  },
+  "noChange": {
+    "code": 2,
+    "err": "example.com: no change",
+    "out": "",
+  },
+  "noInventory": {
+    "code": 2,
+    "err": "run flarealoy security add other.example.net first",
+    "out": "",
+  },
+  "rejectApproved": {
+    "code": 2,
+    "err": "revision 2 is approved, not pending",
+    "out": "",
+  },
+}
+`;
+
+exports[`propose, approve, and reject > propose from a file, then approve 1`] = `
+{
+  "approved": {
+    "code": 0,
+    "err": "",
+    "out": "approved revision 4 (example.com inventory)",
+  },
+  "log": {
+    "code": 0,
+    "err": "",
+    "out": "#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
+#4  2026-10-22T09:00:03.000Z  example.com inventory  approved  skill  api host",
+  },
+  "proposed": {
+    "code": 0,
+    "err": "",
+    "out": "pending revision 4",
+  },
+}
+`;
+
+exports[`propose, approve, and reject > propose the baseline from stdin with --author, then reject 1`] = `
+{
+  "approveRejected": {
+    "code": 2,
+    "err": "revision 4 is rejected, not pending",
+    "out": "",
+  },
+  "proposed": {
+    "code": 0,
+    "err": "",
+    "out": "pending revision 4",
+  },
+  "rejected": {
+    "code": 0,
+    "err": "",
+    "out": "rejected revision 4 (baseline)",
+  },
+}
+`;
+
+exports[`restore and backups > backups with none, then restore dry run and --write --yes of an apply backup 1`] = `
+{
+  "after": {
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:03.000Z  example.com  zone 023e105f4ecef8ad9ca31a8372d0c353
+#2  2026-10-22T09:00:04.000Z  example.com  zone 023e105f4ecef8ad9ca31a8372d0c353",
+  },
+  "dry": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: restore from backup 1 (2026-10-22T09:00:03.000Z)
+  http_request_firewall_custom: send 0 rules
+  http_ratelimit: send 0 rules
+  http_request_dynamic_redirect: send 0 rules
+  setting always_use_https: send "off"
+  setting browser_check: send "off"
+  bot management: send {"fight_mode":false,"enable_js":false}
+example.com: dry run, nothing sent; pass --write to send",
+  },
+  "empty": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: no backups",
+  },
+  "listed": {
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:03.000Z  example.com  zone 023e105f4ecef8ad9ca31a8372d0c353",
+  },
+  "written": {
+    "code": 0,
+    "err": "",
+    "out": "example.com: restore from backup 1 (2026-10-22T09:00:03.000Z)
+  http_request_firewall_custom: send 0 rules
+  http_ratelimit: send 0 rules
+  http_request_dynamic_redirect: send 0 rules
+  setting always_use_https: send "off"
+  setting browser_check: send "off"
+  bot management: send {"fight_mode":false,"enable_js":false}
+example.com: backup 2 saved
+example.com: restored, read-back matches the backup",
+  },
+}
+`;
+
+exports[`restore and backups > error paths 1`] = `
+{
+  "backupsArgs": {
+    "code": 2,
+    "err": "backups takes exactly one zone name",
+    "out": "",
+  },
+  "badId": {
+    "code": 2,
+    "err": "restore takes a zone name and a backup id",
+    "out": "",
+  },
+  "missing": {
+    "code": 2,
+    "err": "example.com: error: no backup 9 for this zone; list them with flarealoy security backups example.com",
+    "out": "",
+  },
+  "noToken": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "noTty": {
+    "code": 2,
+    "err": "refusing to write: stdin is not a terminal, so flarealoy cannot ask per zone; pass --yes to write without asking",
+    "out": "",
+  },
+  "otherZone": {
+    "code": 2,
+    "err": "example.net: error: no backup 1 for this zone; list them with flarealoy security backups example.net",
+    "out": "",
+  },
+}
+`;
+
+exports[`status and diff > diff records the run, --no-record does not 1`] = `
+{
+  "diff": {
+    "code": 1,
+    "err": "",
+    "out": "example.com: drift
+  http_request_firewall_custom: missing flarewall_ports "flarewall: block non-standard ports"
+  http_request_firewall_custom: missing flarewall_probes "flarewall: block scanner probes"
+  http_request_firewall_custom: missing flarewall_hosting "flarewall: challenge hosting networks (verified bots, API hosts, origins allowed)"
+  http_ratelimit: missing flarewall_rate_limit "flarewall: rate limit per IP and data center"
+  http_request_dynamic_redirect: missing flarewall_https "flarewall: redirect HTTP to HTTPS"
+  http_request_dynamic_redirect: missing flarewall_canonical_host "flarewall: redirect to the canonical host"
+  setting always_use_https: live "off"; want "on"
+  setting browser_check: live "off"; want "on"
+  bot management: live {"fight_mode":false,"enable_js":false}; want {"fight_mode":true,"enable_js":true}
+example.net: in sync",
+  },
+  "inSync": {
+    "code": 0,
+    "err": "",
+    "out": "example.net: in sync",
+  },
+  "noRecord": {
+    "code": 1,
+    "err": "",
+    "out": "example.com: drift
+  http_request_firewall_custom: missing flarewall_ports "flarewall: block non-standard ports"
+  http_request_firewall_custom: missing flarewall_probes "flarewall: block scanner probes"
+  http_request_firewall_custom: missing flarewall_hosting "flarewall: challenge hosting networks (verified bots, API hosts, origins allowed)"
+  http_ratelimit: missing flarewall_rate_limit "flarewall: rate limit per IP and data center"
+  http_request_dynamic_redirect: missing flarewall_https "flarewall: redirect HTTP to HTTPS"
+  http_request_dynamic_redirect: missing flarewall_canonical_host "flarewall: redirect to the canonical host"
+  setting always_use_https: live "off"; want "on"
+  setting browser_check: live "off"; want "on"
+  bot management: live {"fight_mode":false,"enable_js":false}; want {"fight_mode":true,"enable_js":true}
+example.net: in sync",
+  },
+  "runs": 2,
+}
+`;
+
+exports[`status and diff > status of a zone with no inventory 1`] = `
+{
+  "code": 2,
+  "err": "",
+  "out": "ZONE               PLAN  STATE
+other.example.net  -     error: no inventory entry, and the token cannot see this zone",
+}
+`;
+
+exports[`status and diff > status of every zone, and of one zone 1`] = `
+{
+  "all": {
+    "code": 1,
+    "err": "",
+    "out": "ZONE         PLAN          STATE
+example.com  Free Website  drift
+example.net  Free Website  in sync",
+  },
+  "net": {
+    "code": 0,
+    "err": "",
+    "out": "ZONE         PLAN          STATE
+example.net  Free Website  in sync",
+  },
+}
+`;
+
+exports[`status and diff > status with an API error 1`] = `
+{
+  "code": 2,
+  "err": "",
+  "out": "ZONE         PLAN          STATE
+example.com  Free Website  error: 403: token lacks DNS read
+example.net  Free Website  in sync",
+}
+`;
+
+exports[`tui > error paths only 1`] = `
+{
+  "args": {
+    "code": 2,
+    "err": "tui takes no arguments, got: extra",
+    "out": "",
+  },
+  "noToken": {
+    "code": 2,
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
+    "out": "",
+  },
+  "noTty": {
+    "code": 2,
+    "err": "refusing to start the tui: stdin is not a terminal",
+    "out": "",
+  },
+}
+`;
+
+exports[`usage > --help 1`] = `
+{
+  "code": 0,
+  "err": "",
+  "out": "Usage: flarealoy security <command> [options]
+
+Zone commands:
+  init              Create the database and write the default baseline as its first revision
+  add <zone>        Write the first inventory revision for a zone the token can see
+  status [zone...]  Print one row per zone: name, plan, state
+  diff [zone...]    Print the changes per zone, and record the run (skip with --no-record)
+  apply <zone...|--all>         Send the baseline to the zones (dry run without --write)
+  restore <zone> <backup-id>    Send a stored backup back to a zone (dry run without --write)
+  backups <zone>    List the stored backups of a zone
+  tui               Open the terminal UI: every zone's state and diff on one screen
+
+Revision commands:
+  edit <zone> | edit --baseline       Edit the current text in $EDITOR and save a new revision
+  propose <zone> <file|-> | propose --baseline <file|->
+                    Write a pending revision for the owner to approve, and print its id
+  log [zone]        List the revisions, oldest first
+  show <id>         Print one revision: a comment header, then the YAML text
+  revert <id>       Save the text of an older approved revision as a new revision
+  approve <id>      Approve a pending revision
+  reject <id>       Reject a pending revision
+
+Options:
+  --all             apply: every inventory zone
+  --write           apply, restore: send the writes (back up first, ask per zone, read back)
+  --yes             apply, restore: do not ask per zone
+  --no-record       diff: do not record the run
+  --baseline        edit, propose: the baseline in place of a zone inventory
+  -m, --message <text>  edit, propose, revert: the revision message
+  --author <word>   propose: the author word (default: skill)
+  -h, --help        Show this help
+
+Environment:
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
+  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  EDITOR                The editor for edit (VISUAL first, vi when neither is set)
+
+Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
+Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
+}
+`;
+
+exports[`usage > -h with a command 1`] = `
+{
+  "code": 0,
+  "err": "",
+  "out": "Usage: flarealoy security <command> [options]
+
+Zone commands:
+  init              Create the database and write the default baseline as its first revision
+  add <zone>        Write the first inventory revision for a zone the token can see
+  status [zone...]  Print one row per zone: name, plan, state
+  diff [zone...]    Print the changes per zone, and record the run (skip with --no-record)
+  apply <zone...|--all>         Send the baseline to the zones (dry run without --write)
+  restore <zone> <backup-id>    Send a stored backup back to a zone (dry run without --write)
+  backups <zone>    List the stored backups of a zone
+  tui               Open the terminal UI: every zone's state and diff on one screen
+
+Revision commands:
+  edit <zone> | edit --baseline       Edit the current text in $EDITOR and save a new revision
+  propose <zone> <file|-> | propose --baseline <file|->
+                    Write a pending revision for the owner to approve, and print its id
+  log [zone]        List the revisions, oldest first
+  show <id>         Print one revision: a comment header, then the YAML text
+  revert <id>       Save the text of an older approved revision as a new revision
+  approve <id>      Approve a pending revision
+  reject <id>       Reject a pending revision
+
+Options:
+  --all             apply: every inventory zone
+  --write           apply, restore: send the writes (back up first, ask per zone, read back)
+  --yes             apply, restore: do not ask per zone
+  --no-record       diff: do not record the run
+  --baseline        edit, propose: the baseline in place of a zone inventory
+  -m, --message <text>  edit, propose, revert: the revision message
+  --author <word>   propose: the author word (default: skill)
+  -h, --help        Show this help
+
+Environment:
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
+  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  EDITOR                The editor for edit (VISUAL first, vi when neither is set)
+
+Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
+Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
+}
+`;
+
+exports[`usage > no command 1`] = `
+{
+  "code": 2,
+  "err": "Usage: flarealoy security <command> [options]
+
+Zone commands:
+  init              Create the database and write the default baseline as its first revision
+  add <zone>        Write the first inventory revision for a zone the token can see
+  status [zone...]  Print one row per zone: name, plan, state
+  diff [zone...]    Print the changes per zone, and record the run (skip with --no-record)
+  apply <zone...|--all>         Send the baseline to the zones (dry run without --write)
+  restore <zone> <backup-id>    Send a stored backup back to a zone (dry run without --write)
+  backups <zone>    List the stored backups of a zone
+  tui               Open the terminal UI: every zone's state and diff on one screen
+
+Revision commands:
+  edit <zone> | edit --baseline       Edit the current text in $EDITOR and save a new revision
+  propose <zone> <file|-> | propose --baseline <file|->
+                    Write a pending revision for the owner to approve, and print its id
+  log [zone]        List the revisions, oldest first
+  show <id>         Print one revision: a comment header, then the YAML text
+  revert <id>       Save the text of an older approved revision as a new revision
+  approve <id>      Approve a pending revision
+  reject <id>       Reject a pending revision
+
+Options:
+  --all             apply: every inventory zone
+  --write           apply, restore: send the writes (back up first, ask per zone, read back)
+  --yes             apply, restore: do not ask per zone
+  --no-record       diff: do not record the run
+  --baseline        edit, propose: the baseline in place of a zone inventory
+  -m, --message <text>  edit, propose, revert: the revision message
+  --author <word>   propose: the author word (default: skill)
+  -h, --help        Show this help
+
+Environment:
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
+  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  EDITOR                The editor for edit (VISUAL first, vi when neither is set)
+
+Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
+Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
+  "out": "",
+}
+`;
+
+exports[`usage > unknown command 1`] = `
+{
+  "code": 2,
+  "err": "unknown command: nope
+Usage: flarealoy security <command> [options]
+
+Zone commands:
+  init              Create the database and write the default baseline as its first revision
+  add <zone>        Write the first inventory revision for a zone the token can see
+  status [zone...]  Print one row per zone: name, plan, state
+  diff [zone...]    Print the changes per zone, and record the run (skip with --no-record)
+  apply <zone...|--all>         Send the baseline to the zones (dry run without --write)
+  restore <zone> <backup-id>    Send a stored backup back to a zone (dry run without --write)
+  backups <zone>    List the stored backups of a zone
+  tui               Open the terminal UI: every zone's state and diff on one screen
+
+Revision commands:
+  edit <zone> | edit --baseline       Edit the current text in $EDITOR and save a new revision
+  propose <zone> <file|-> | propose --baseline <file|->
+                    Write a pending revision for the owner to approve, and print its id
+  log [zone]        List the revisions, oldest first
+  show <id>         Print one revision: a comment header, then the YAML text
+  revert <id>       Save the text of an older approved revision as a new revision
+  approve <id>      Approve a pending revision
+  reject <id>       Reject a pending revision
+
+Options:
+  --all             apply: every inventory zone
+  --write           apply, restore: send the writes (back up first, ask per zone, read back)
+  --yes             apply, restore: do not ask per zone
+  --no-record       diff: do not record the run
+  --baseline        edit, propose: the baseline in place of a zone inventory
+  -m, --message <text>  edit, propose, revert: the revision message
+  --author <word>   propose: the author word (default: skill)
+  -h, --help        Show this help
+
+Environment:
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
+  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  EDITOR                The editor for edit (VISUAL first, vi when neither is set)
+
+Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
+Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
+  "out": "",
+}
+`;
+
+exports[`usage > unknown option 1`] = `
+{
+  "code": 2,
+  "err": "Unknown option '--bogus'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- "--bogus"
+Usage: flarealoy security <command> [options]
+
+Zone commands:
+  init              Create the database and write the default baseline as its first revision
+  add <zone>        Write the first inventory revision for a zone the token can see
+  status [zone...]  Print one row per zone: name, plan, state
+  diff [zone...]    Print the changes per zone, and record the run (skip with --no-record)
+  apply <zone...|--all>         Send the baseline to the zones (dry run without --write)
+  restore <zone> <backup-id>    Send a stored backup back to a zone (dry run without --write)
+  backups <zone>    List the stored backups of a zone
+  tui               Open the terminal UI: every zone's state and diff on one screen
+
+Revision commands:
+  edit <zone> | edit --baseline       Edit the current text in $EDITOR and save a new revision
+  propose <zone> <file|-> | propose --baseline <file|->
+                    Write a pending revision for the owner to approve, and print its id
+  log [zone]        List the revisions, oldest first
+  show <id>         Print one revision: a comment header, then the YAML text
+  revert <id>       Save the text of an older approved revision as a new revision
+  approve <id>      Approve a pending revision
+  reject <id>       Reject a pending revision
+
+Options:
+  --all             apply: every inventory zone
+  --write           apply, restore: send the writes (back up first, ask per zone, read back)
+  --yes             apply, restore: do not ask per zone
+  --no-record       diff: do not record the run
+  --baseline        edit, propose: the baseline in place of a zone inventory
+  -m, --message <text>  edit, propose, revert: the revision message
+  --author <word>   propose: the author word (default: skill)
+  -h, --help        Show this help
+
+Environment:
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
+  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  EDITOR                The editor for edit (VISUAL first, vi when neither is set)
+
+Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
+Exit codes (other commands): 0 done or declined, 2 any failure or a usage error",
+  "out": "",
+}
+`;

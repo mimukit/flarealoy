@@ -1,143 +1,49 @@
-// The schema, the migrations, and every query of the data store, in the SQLite dialect. The Node
-// adapter (src/node/sqlite-store.ts) runs them on node:sqlite; a later D1 adapter can run the same
-// text. Parameters are positional (`?`).
+// The platform part of the store in the SQLite dialect: the meta table, the core migrations, and
+// the generic queries over a registered table. The Node adapter (src/node/sqlite-store.ts) runs
+// them on node:sqlite. Each module keeps its own SQL in its own store-sql.ts. Parameters are
+// positional (`?`).
 // Core module: no Node-only API here, so a Worker can run it.
 
+/** The name of the platform core in the meta keys and in the export's schema_versions. */
+export const CORE = 'core';
+
+/** The meta key of a module's schema version. */
+export function versionKey(name: string): string {
+  return `schema_version.${name}`;
+}
+
+/** The one schema_version key of a flarewall file, and the module it belongs to. */
+export const LEGACY_VERSION_KEY = 'schema_version';
+export const LEGACY_VERSION_MODULE = 'security';
+
 /**
- * The migrations, in order. Migration i moves the schema from version i to version i + 1. Never
- * edit a migration that has shipped; add a new one.
+ * The core migrations, in order. Migration i moves the core from version i to version i + 1.
+ * Never edit a migration that has shipped; add a new one.
+ *
+ * On a file with a meta table they run before the module migrations, so the old flarewall key
+ * moves to `schema_version.security` before the security module reads its version. On a new file
+ * they run after the module migrations; the security migration 1 creates meta.
  */
-export const MIGRATIONS: readonly string[] = [
+export const CORE_MIGRATIONS: readonly string[] = [
   `
-CREATE TABLE meta (
+CREATE TABLE IF NOT EXISTS meta (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
-
-CREATE TABLE revisions (
-  id INTEGER PRIMARY KEY,
-  kind TEXT NOT NULL CHECK (kind IN ('baseline', 'inventory')),
-  zone TEXT,
-  parent_id INTEGER REFERENCES revisions (id),
-  status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')),
-  text TEXT NOT NULL,
-  sha256 TEXT NOT NULL,
-  author TEXT NOT NULL,
-  message TEXT,
-  created_at TEXT NOT NULL,
-  decided_at TEXT,
-  CHECK ((kind = 'baseline') = (zone IS NULL))
-);
-CREATE INDEX revisions_doc ON revisions (kind, zone, status, id);
-
--- Append-only: a row never goes away, and only a pending row may change, and then only its
--- status and decided_at.
-CREATE TRIGGER revisions_no_delete BEFORE DELETE ON revisions
-BEGIN
-  SELECT RAISE(ABORT, 'revisions are append-only');
-END;
-CREATE TRIGGER revisions_decide_only BEFORE UPDATE ON revisions
-WHEN OLD.status <> 'pending'
-  OR NEW.status = 'pending'
-  OR NEW.id IS NOT OLD.id
-  OR NEW.kind IS NOT OLD.kind
-  OR NEW.zone IS NOT OLD.zone
-  OR NEW.parent_id IS NOT OLD.parent_id
-  OR NEW.text IS NOT OLD.text
-  OR NEW.sha256 IS NOT OLD.sha256
-  OR NEW.author IS NOT OLD.author
-  OR NEW.message IS NOT OLD.message
-  OR NEW.created_at IS NOT OLD.created_at
-BEGIN
-  SELECT RAISE(ABORT, 'revisions are append-only; only a pending revision can be decided');
-END;
-
-CREATE TABLE backups (
-  id INTEGER PRIMARY KEY,
-  zone TEXT NOT NULL,
-  zone_id TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  backup TEXT NOT NULL
-);
-CREATE INDEX backups_zone ON backups (zone, id);
-CREATE TRIGGER backups_no_change BEFORE UPDATE ON backups
-BEGIN
-  SELECT RAISE(ABORT, 'backups are append-only');
-END;
-CREATE TRIGGER backups_no_delete BEFORE DELETE ON backups
-BEGIN
-  SELECT RAISE(ABORT, 'backups are append-only');
-END;
-
-CREATE TABLE runs (
-  id INTEGER PRIMARY KEY,
-  created_at TEXT NOT NULL
-);
-CREATE TABLE run_zones (
-  id INTEGER PRIMARY KEY,
-  run_id INTEGER NOT NULL REFERENCES runs (id),
-  zone TEXT NOT NULL,
-  state TEXT NOT NULL,
-  changes INTEGER NOT NULL,
-  error TEXT
-);
-CREATE INDEX run_zones_run ON run_zones (run_id, id);
-CREATE TRIGGER runs_no_delete BEFORE DELETE ON runs
-BEGIN
-  SELECT RAISE(ABORT, 'runs are append-only');
-END;
-CREATE TRIGGER run_zones_no_delete BEFORE DELETE ON run_zones
-BEGIN
-  SELECT RAISE(ABORT, 'runs are append-only');
-END;
+UPDATE meta SET key = 'schema_version.security' WHERE key = 'schema_version';
 `,
 ];
 
-/** The schema version this flarewall writes. */
-export const SCHEMA_VERSION = MIGRATIONS.length;
-
-/** The tables in export order, each with its columns in export order. */
-export const EXPORT_TABLES = {
-  revisions: ['id', 'kind', 'zone', 'parent_id', 'status', 'text', 'sha256', 'author', 'message', 'created_at', 'decided_at'],
-  backups: ['id', 'zone', 'zone_id', 'created_at', 'backup'],
-  runs: ['id', 'created_at'],
-  run_zones: ['id', 'run_id', 'zone', 'state', 'changes', 'error'],
-} as const;
-
-export type ExportTable = keyof typeof EXPORT_TABLES;
-
-const REVISION_COLUMNS = EXPORT_TABLES.revisions.join(', ');
-
-export const SQL = {
+export const CORE_SQL = {
   /** 1 when the meta table exists. */
   hasMeta: `SELECT count(*) AS n FROM sqlite_master WHERE type = 'table' AND name = 'meta'`,
-  getVersion: `SELECT value FROM meta WHERE key = 'schema_version'`,
-  setVersion: `INSERT INTO meta (key, value) VALUES ('schema_version', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
-
-  currentRevision: `SELECT ${REVISION_COLUMNS} FROM revisions WHERE kind = ? AND zone IS ? AND status = 'approved' ORDER BY id DESC LIMIT 1`,
-  currentInventories: `SELECT ${REVISION_COLUMNS} FROM revisions r WHERE kind = 'inventory' AND status = 'approved'
-  AND id = (SELECT max(id) FROM revisions s WHERE s.kind = 'inventory' AND s.zone = r.zone AND s.status = 'approved')
-  ORDER BY zone`,
-  listRevisions: `SELECT ${REVISION_COLUMNS} FROM revisions ORDER BY id`,
-  listZoneRevisions: `SELECT ${REVISION_COLUMNS} FROM revisions WHERE kind = 'inventory' AND zone = ? ORDER BY id`,
-  getRevision: `SELECT ${REVISION_COLUMNS} FROM revisions WHERE id = ?`,
-  pendingRevisions: `SELECT ${REVISION_COLUMNS} FROM revisions WHERE kind = ? AND zone IS ? AND status = 'pending' ORDER BY id`,
-  insertRevision: `INSERT INTO revisions (kind, zone, parent_id, status, text, sha256, author, message, created_at, decided_at)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING ${REVISION_COLUMNS}`,
-  decideRevision: `UPDATE revisions SET status = ?, decided_at = ? WHERE id = ? AND status = 'pending' RETURNING ${REVISION_COLUMNS}`,
-
-  insertBackup: `INSERT INTO backups (zone, zone_id, created_at, backup) VALUES (?, ?, ?, ?) RETURNING id, zone, zone_id, created_at, backup`,
-  listBackups: `SELECT id, zone, zone_id, created_at, backup FROM backups WHERE zone = ? ORDER BY id`,
-  getBackup: `SELECT id, zone, zone_id, created_at, backup FROM backups WHERE id = ?`,
-
-  insertRun: `INSERT INTO runs (created_at) VALUES (?) RETURNING id, created_at`,
-  insertRunZone: `INSERT INTO run_zones (run_id, zone, state, changes, error) VALUES (?, ?, ?, ?, ?)`,
-  listRuns: `SELECT id, created_at FROM runs ORDER BY id`,
-  listRunZones: `SELECT id, run_id, zone, state, changes, error FROM run_zones ORDER BY run_id, id`,
+  getVersion: `SELECT value FROM meta WHERE key = ?`,
+  setVersion: `INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
+  /** Every schema version key, also the old flarewall one. */
+  versionKeys: `SELECT key, value FROM meta WHERE key = 'schema_version' OR key LIKE 'schema\\_version.%' ESCAPE '\\'`,
 
   /** Every row of a table, in export column order, ordered by id. */
-  exportRows: (table: ExportTable) => `SELECT ${EXPORT_TABLES[table].join(', ')} FROM ${table} ORDER BY id`,
-  importRow: (table: ExportTable) =>
-    `INSERT INTO ${table} (${EXPORT_TABLES[table].join(', ')}) VALUES (${EXPORT_TABLES[table].map(() => '?').join(', ')})`,
-  countRows: (table: ExportTable) => `SELECT count(*) AS n FROM ${table}`,
+  exportRows: (table: string, columns: readonly string[]) => `SELECT ${columns.join(', ')} FROM ${table} ORDER BY id`,
+  importRow: (table: string, columns: readonly string[]) => `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`,
+  countRows: (table: string) => `SELECT count(*) AS n FROM ${table}`,
 } as const;
