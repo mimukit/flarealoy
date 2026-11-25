@@ -156,7 +156,8 @@ describe('export and import', () => {
       const out = exportDatabase(db);
       expect(Object.keys(out)).toEqual(['flarealoy_export', 'schema_versions', 'tables']);
       expect(out.schema_versions).toEqual({ core: CORE_MIGRATIONS.length, security: 1 });
-      expect(Object.keys(out.tables)).toEqual([...TABLES]);
+      expect(Object.keys(out.tables)).toEqual(['core_accounts', ...TABLES]);
+      expect(out.tables.core_accounts).toEqual([]);
       const source = JSON.parse(FIXTURE) as Record<string, unknown>;
       for (const table of TABLES) expect(out.tables[table]).toEqual(source[table]);
     } finally {
@@ -200,7 +201,7 @@ describe('export and import', () => {
     const { run_zones: _, ...noRunZones } = fixture;
     expect(() => parseExport(JSON.stringify(noRunZones), MODULES)).toThrow('not a flarealoy export: run_zones: missing');
     expect(() => parseExport(JSON.stringify({ ...fixture, extra: [] }), MODULES)).toThrow('not a flarealoy export: extra: unknown table');
-    const flarealoy = { flarealoy_export: 1, schema_versions: { core: 1, security: 1 }, tables: { revisions: [{ id: 1 }], backups: [], runs: [], run_zones: [] } };
+    const flarealoy = { flarealoy_export: 1, schema_versions: { core: 1, security: 1 }, tables: { core_accounts: [], revisions: [{ id: 1 }], backups: [], runs: [], run_zones: [] } };
     expect(() => parseExport(JSON.stringify(flarealoy), MODULES)).toThrow(/^not a flarealoy export: tables\.revisions\.0\.kind/);
     expect(() => parseExport(JSON.stringify({ ...flarealoy, schema_versions: { core: 1, usage: 1 } }), MODULES)).toThrow('not a flarealoy export: schema_versions.usage: unknown module');
     expect(() => parseExport(JSON.stringify({ ...flarealoy, schema_versions: { core: 1 } }), MODULES)).toThrow('not a flarealoy export: tables.revisions: module security has no schema version');

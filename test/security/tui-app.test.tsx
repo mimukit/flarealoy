@@ -113,7 +113,7 @@ const INVENTORY_ZONES = ZONES.filter((z) => z !== 'new.example.com');
 
 function start(api: FakeCloudflareApi) {
   const onQuit = vi.fn();
-  const { element } = createTui({ api, store: db, columns: 100, rows: 40, onQuit });
+  const { element } = createTui({ api, writeApi: api, store: db, columns: 100, rows: 40, onQuit });
   const screen = render(element);
   return { ...screen, onQuit, frame: () => screen.lastFrame() ?? '' };
 }

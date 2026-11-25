@@ -42,7 +42,7 @@ const NET_DNS = [
   { name: 'mail.example.net', type: 'A', content: '203.0.113.5', proxied: false },
 ];
 
-const TOKEN = { CLOUDFLARE_API_TOKEN: 'test-token' };
+const TOKEN = { CLOUDFLARE_API_TOKEN: 'test-token', CLOUDFLARE_WRITE_TOKEN: 'write-token' };
 
 let tick: number;
 let store: DataStore;
@@ -237,6 +237,41 @@ describe('apply', () => {
       noTty: await cli(['apply', 'example.com', '--write']),
       noInventory: await cli(['apply', 'other.example.net']),
     }).toMatchSnapshot();
+  });
+});
+
+describe('write token', () => {
+  const READ_ONLY = { CLOUDFLARE_API_TOKEN: 'test-token' };
+  const WRITE_ONLY = { CLOUDFLARE_WRITE_TOKEN: 'write-token' };
+  /** The token each API client was built with. */
+  let tokens: string[];
+  const tracked = { api: (token: string) => (tokens.push(token), api) };
+  beforeEach(() => {
+    tokens = [];
+  });
+
+  it('apply --write and restore --write refuse without CLOUDFLARE_WRITE_TOKEN, before any call', async () => {
+    await cli(['apply', 'example.com', '--write', '--yes']);
+    const before = api.writes.length;
+    tokens = [];
+    expect({
+      apply: await cli(['apply', 'example.com', '--write', '--yes'], { env: READ_ONLY, deps: tracked }),
+      applyAll: await cli(['apply', '--all', '--write'], { env: READ_ONLY, deps: { ...tracked, isTTY: true } }),
+      restore: await cli(['restore', 'example.com', '1', '--write', '--yes'], { env: READ_ONLY, deps: tracked }),
+      writes: api.writes.length - before,
+      tokens,
+    }).toMatchSnapshot();
+  });
+  it('apply --write runs the write path on CLOUDFLARE_WRITE_TOKEN; a dry run uses the read token', async () => {
+    const dry = await cli(['apply', 'example.com'], { deps: tracked });
+    const written = await cli(['apply', 'example.com', '--write', '--yes'], { deps: tracked });
+    expect({ dry, written, writes: api.writes.length, tokens }).toMatchSnapshot();
+  });
+  it('a read command ignores --write and runs on the read token', async () => {
+    expect({ status: await cli(['status', '--write'], { env: READ_ONLY, deps: tracked }), tokens }).toMatchSnapshot();
+  });
+  it('status runs with only CLOUDFLARE_WRITE_TOKEN', async () => {
+    expect({ status: await cli(['status'], { env: WRITE_ONLY, deps: tracked }), tokens }).toMatchSnapshot();
   });
 });
 

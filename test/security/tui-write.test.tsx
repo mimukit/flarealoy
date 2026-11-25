@@ -67,9 +67,10 @@ async function seed(api: FakeCloudflareApi, db: DataStore): Promise<{ com: FakeZ
   return { com, org };
 }
 
-function start(api: FakeCloudflareApi, db: DataStore) {
+/** `write: false` starts the TUI as with no CLOUDFLARE_WRITE_TOKEN: no write client. */
+function start(api: FakeCloudflareApi, db: DataStore, write = true) {
   const onQuit = vi.fn();
-  const { store, element } = createTui({ api, store: db, columns: 400, rows: 60, onQuit });
+  const { store, element } = createTui({ api, ...(write ? { writeApi: api } : {}), store: db, columns: 400, rows: 60, onQuit });
   const screen = render(element);
   // A fake stdout has 100 columns; set 400, as a terminal resize does, so both panes show.
   Object.defineProperty(screen.stdout, 'columns', { configurable: true, get: () => 400 });
@@ -98,8 +99,8 @@ function diffColumn(frame: string): string {
 
 const ZONES = ['example.com', 'example.net', 'example.org'];
 
-async function loadedScreen(api: FakeCloudflareApi, db: DataStore) {
-  const screen = start(api, db);
+async function loadedScreen(api: FakeCloudflareApi, db: DataStore, write = true) {
+  const screen = start(api, db, write);
   await vi.waitFor(() => {
     for (const zone of ZONES) expect(rowLine(screen.frame(), zone)).toMatch(/\s(legacy|in sync|drift)\s/);
   });
@@ -180,7 +181,7 @@ describe('TUI dry run and write', () => {
     const cliDb = await dataStore();
     const cliApi = new FakeCloudflareApi();
     await seed(cliApi, cliDb);
-    const code = await run(['apply', 'example.com', '--write', '--yes'], { CLOUDFLARE_API_TOKEN: 'test-token' }, { out: () => {}, err: () => {} }, { api: () => cliApi, store: cliDb });
+    const code = await run(['apply', 'example.com', '--write', '--yes'], { CLOUDFLARE_API_TOKEN: 'test-token', CLOUDFLARE_WRITE_TOKEN: 'write-token' }, { out: () => {}, err: () => {} }, { api: () => cliApi, store: cliDb });
     expect(code).toBe(0);
     const want = await backups(cliDb, 'example.com');
     expect(want).toHaveLength(1);
@@ -313,5 +314,24 @@ describe('TUI dry run and write', () => {
     expect(api.writes.every((w) => w.zoneId === IDS.com)).toBe(true);
     expect(screen.frame()).not.toContain(prompt('example.org'));
     expect(tuiExitCode(screen.store.getState())).toBe(0);
+  });
+});
+
+describe('tui with no write token', () => {
+  it('the write key shows needs CLOUDFLARE_WRITE_TOKEN, sends nothing, and the dry run still runs', async () => {
+    const api = new FakeCloudflareApi();
+    const db = await dataStore();
+    await seed(api, db);
+    const screen = await loadedScreen(api, db, false);
+    expect(flat(screen.frame())).toContain('a apply: needs CLOUDFLARE_WRITE_TOKEN');
+    await keys(screen, 'G', 'a');
+    await vi.waitFor(() => expect(flat(diffColumn(screen.frame()))).toContain('example.org: needs CLOUDFLARE_WRITE_TOKEN'));
+    expect(screen.frame()).not.toContain(prompt('example.org'));
+    expect(api.writes).toHaveLength(0);
+    await keys(screen, 'd');
+    await vi.waitFor(() => expect(flat(diffColumn(screen.frame()))).toContain('example.org: dry run, nothing sent; press a to apply'));
+    expect(api.writes).toHaveLength(0);
+    expect(tuiExitCode(screen.store.getState())).toBe(0);
+    screen.unmount();
   });
 });

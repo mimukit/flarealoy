@@ -2,6 +2,7 @@
 // the revision commands (edit, propose, log, show, revert, approve, reject, backups). export and
 // import moved to the top level (src/cli/run.ts); here they only say so.
 import { parseArgs } from 'node:util';
+import { READ_TOKEN_MISSING, readToken, writeToken, writeTokenMissing } from '../../../core/tokens.js';
 import type { CloudflareApi } from '../core/api.js';
 import { applyInventoryZone, restoreZone, type BackupWriter } from '../core/apply.js';
 import {
@@ -107,13 +108,14 @@ Options:
 Environment:
   FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
                         or ~/.local/share/flarealoy/flarealoy.sqlite)
-  CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
+  CLOUDFLARE_API_TOKEN  The read token (add, status, diff, dry runs, tui);
+                        CLOUDFLARE_WRITE_TOKEN when only that one is set
+  CLOUDFLARE_WRITE_TOKEN  The write token (apply --write, restore --write, the tui write key)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
 Exit codes (other commands): 0 done or declined, 2 any failure or a usage error`;
 
-const TOKEN_MISSING = 'CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only';
 const MOVED = 'moved: run flarealoy export';
 const DATA_GONE = '--data is gone; flarealoy reads FLAREALOY_DB';
 
@@ -180,13 +182,25 @@ export async function run(
     return 2;
   }
 
+  // Only apply and restore write; the other commands ignore --write, as before.
+  const write = parsed.values.write === true && (command === 'apply' || command === 'restore');
+  /**
+   * The API client. A write command (`--write`) uses CLOUDFLARE_WRITE_TOKEN for every call; every
+   * other command uses the read token.
+   */
   const connect = async (): Promise<CloudflareApi | undefined> => {
-    const token = env.CLOUDFLARE_API_TOKEN;
-    if (token === undefined || token === '') {
-      io.err(TOKEN_MISSING);
+    const token = write ? writeToken(env) : readToken(env);
+    if (token === undefined) {
+      io.err(write ? writeTokenMissing(`security ${command} --write`) : READ_TOKEN_MISSING);
       return undefined;
     }
-    return (deps.api ?? defaultApi)(token);
+    return (deps.api ?? defaultApi)(token.value);
+  };
+  /** Stops a write command without CLOUDFLARE_WRITE_TOKEN before it reads or writes anything. */
+  const writeTokenRefused = (): boolean => {
+    if (!write || writeToken(env) !== undefined) return false;
+    io.err(writeTokenMissing(`security ${command} --write`));
+    return true;
   };
 
   /** The stores this invocation opened, closed at the end. A store from deps stays open. */
@@ -200,7 +214,6 @@ export async function run(
     return store;
   };
 
-  const write = parsed.values.write === true;
   const yes = parsed.values.yes === true;
   const msg = parsed.values.message;
   /** Refuses a write that nobody can confirm. */
@@ -284,7 +297,7 @@ export async function run(
           io.err(all ? 'apply takes zone names or --all, not both' : 'apply needs zone names or --all');
           return 2;
         }
-        if (writeRefused()) return 2;
+        if (writeTokenRefused() || writeRefused()) return 2;
         const store = await openStore();
         const api = await connect();
         if (api === undefined) return 2;
@@ -320,7 +333,7 @@ export async function run(
           io.err('restore takes a zone name and a backup id');
           return 2;
         }
-        if (writeRefused()) return 2;
+        if (writeTokenRefused() || writeRefused()) return 2;
         const store = await openStore();
         const row = await store.getBackup(id);
         if (row === undefined || row.zone !== name) {
@@ -468,9 +481,12 @@ export async function run(
         const store = await openStore();
         const api = await connect();
         if (api === undefined) return 2;
+        // The TUI opens on the read token. Its write key gets a client only when the write token is set.
+        const token = writeToken(env);
+        const writeApi = token === undefined ? undefined : await (deps.api ?? defaultApi)(token.value);
         // A dynamic import, so no other command loads Ink or React.
         const { startTui } = await import('../tui/main.js');
-        return await startTui({ api, store });
+        return await startTui({ api, store, ...(writeApi === undefined ? {} : { writeApi }) });
       }
       default:
         io.err(`unknown command: ${command}`);

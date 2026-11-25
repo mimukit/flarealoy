@@ -11,7 +11,10 @@ import { initialState, tuiExitCode, type TuiData } from './state.js';
 import { createStore, type Store } from './store.js';
 
 export interface TuiOptions {
+  /** The client on the read token. */
   api: CloudflareApi;
+  /** The client on CLOUDFLARE_WRITE_TOKEN; absent when that variable is not set, and the write key then shows the missing-token message. */
+  writeApi?: CloudflareApi;
   store: DataStore;
   /** Reads the current revisions. Default: loadDataSet on the store. */
   load?: () => Promise<TuiData>;
@@ -25,9 +28,10 @@ export interface TuiOptions {
 /** The store and the app element. Tests render the element with ink-testing-library. */
 export function createTui(options: TuiOptions): { store: Store; element: ReactElement } {
   const store = createStore(
-    initialState({ dbPath: options.store.location, columns: options.columns, rows: options.rows ?? 24 }),
+    initialState({ dbPath: options.store.location, columns: options.columns, rows: options.rows ?? 24, canWrite: options.writeApi !== undefined }),
     createRunner({
       api: options.api,
+      ...(options.writeApi === undefined ? {} : { writeApi: options.writeApi }),
       load: options.load ?? (() => loadDataSet(options.store)),
       backup: storeBackupWriter(options.store),
       add: async (zone) => `inventory revision ${(await addZoneInventory(options.api, options.store, zone)).id}`,
@@ -38,7 +42,7 @@ export function createTui(options: TuiOptions): { store: Store; element: ReactEl
 }
 
 /** Runs the TUI until the owner quits, then exits the process: 2 when a write failed, else 0. */
-export async function startTui(options: { api: CloudflareApi; store: DataStore }): Promise<never> {
+export async function startTui(options: { api: CloudflareApi; writeApi?: CloudflareApi; store: DataStore }): Promise<never> {
   let quit = () => {};
   const { store, element } = createTui({ ...options, columns: process.stdout.columns ?? 80, onQuit: () => quit() });
   const instance = render(element, { exitOnCtrlC: false, alternateScreen: true });

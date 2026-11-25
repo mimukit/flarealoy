@@ -3,6 +3,7 @@
 // registered module, and exports and imports every registered table.
 // Core module: no Node-only API here, so a Worker can run it.
 import { z } from 'zod';
+import { withCore } from './core-module.js';
 import { CORE, LEGACY_VERSION_MODULE } from './store-sql.js';
 
 export class StoreError extends Error {
@@ -68,10 +69,11 @@ function firstIssue(error: z.ZodError, prefix: string): StoreError {
 
 /**
  * Parses the text of an export file: a flarealoy export, or a flarewall export, which loads as the
- * security module at its schema version. Checks every table against the registered modules and
- * every row against its table's schema. Throws StoreError on bad JSON or a bad shape.
+ * security module at its schema version. Checks every table against the core and the registered
+ * modules, and every row against its table's schema. Throws StoreError on bad JSON or a bad shape.
  */
-export function parseExport(text: string, modules: readonly StoreModule[]): DatabaseExport {
+export function parseExport(text: string, registered: readonly StoreModule[]): DatabaseExport {
+  const modules = withCore(registered);
   let json: unknown;
   try {
     json = JSON.parse(text);
