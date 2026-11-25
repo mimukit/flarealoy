@@ -13,8 +13,11 @@ CREATE TABLE core_alerts (
 `;
 
 export const ALERTS_SQL = {
-  /** Adds a key; changes is 0 when the key is already there. */
-  claim: `INSERT INTO core_alerts (dedupe_key, title, severity, sent_at) VALUES (?, ?, ?, ?) ON CONFLICT (dedupe_key) DO NOTHING`,
+  has: `SELECT 1 AS n FROM core_alerts WHERE dedupe_key = ?`,
+  /** Adds a sent key; a key that is already there stays as it is. */
+  record: `INSERT INTO core_alerts (dedupe_key, title, severity, sent_at) VALUES (?, ?, ?, ?) ON CONFLICT (dedupe_key) DO NOTHING`,
+  /** The keys that start with a prefix; the prefix is matched with substr, so % and _ are plain text. */
+  keys: `SELECT dedupe_key FROM core_alerts WHERE substr(dedupe_key, 1, length(?1)) = ?1 ORDER BY id`,
   release: `DELETE FROM core_alerts WHERE dedupe_key = ?`,
   list: `SELECT dedupe_key, title, severity, sent_at FROM core_alerts ORDER BY id`,
 } as const;

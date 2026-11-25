@@ -67,4 +67,43 @@ describe('testAlert', () => {
     expect(message.dedupeKey).toBe('test-alert:2026-11-25T10:00:00.000Z');
     expect(message.body).toContain('2026-11-25T10:00:00.000Z');
   });
+
+  it('records the key only after the send succeeds, so a stop mid-send loses no alert', async () => {
+    const log = sqliteAlertLog(db);
+    let finish = () => {};
+    let started = () => {};
+    const inFlight = new Promise<void>((resolve) => (started = resolve));
+    const slow = {
+      name: 'slow',
+      send: () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+          started();
+        }),
+    };
+    const pending = sendAlert(slow, log, drift, NOW);
+    await inFlight;
+    // The send is in flight: a process that stops now leaves no key, so the next run sends again.
+    expect(log.has(drift.dedupeKey)).toBe(false);
+    expect(log.list()).toEqual([]);
+    finish();
+    expect(await pending).toBe('sent');
+    expect(log.has(drift.dedupeKey)).toBe(true);
+  });
+});
+
+describe('the alert log', () => {
+  it('lists the keys with a prefix, with % and _ as plain text, and releases a key', () => {
+    const log = sqliteAlertLog(db);
+    for (const key of ['security.zone:a_b.example:drift', 'security.zone:axb.example:drift', 'security.zone:a%b.example:error', 'security.zone:a_b.example:in sync']) {
+      log.record({ dedupeKey: key, title: 't', severity: 'info', sentAt: NOW.toISOString() });
+    }
+    expect(log.keys('security.zone:a_b.example:')).toEqual(['security.zone:a_b.example:drift', 'security.zone:a_b.example:in sync']);
+    expect(log.keys('security.zone:a%')).toEqual(['security.zone:a%b.example:error']);
+    log.release('security.zone:a_b.example:drift');
+    expect(log.keys('security.zone:a_b.example:')).toEqual(['security.zone:a_b.example:in sync']);
+    // A second record of a key keeps the first row.
+    log.record({ dedupeKey: 'security.zone:axb.example:drift', title: 'other', severity: 'warning', sentAt: 'later' });
+    expect(log.list().find((a) => a.dedupeKey === 'security.zone:axb.example:drift')?.title).toBe('t');
+  });
 });

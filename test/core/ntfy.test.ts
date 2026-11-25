@@ -60,6 +60,42 @@ describe('ntfy notifier', () => {
     expect((error as Error).message).toBe('ntfy: the request to ntfy.example.com failed: connect ECONNREFUSED');
   });
 
+  it('adds the cause of a failed fetch to the message', async () => {
+    const fetch = (async () => {
+      throw new TypeError('fetch failed', { cause: new Error('getaddrinfo ENOTFOUND ntfy.example.com') });
+    }) as unknown as typeof globalThis.fetch;
+    await expect(ntfyNotifier({ server: 'https://ntfy.example.com', topic: 'secret-topic' }, fetch).send(message)).rejects.toThrow(
+      'ntfy: the request to ntfy.example.com failed: fetch failed (getaddrinfo ENOTFOUND ntfy.example.com)',
+    );
+  });
+
+  it('aborts a request that gets no answer within the time limit', async () => {
+    let signal: AbortSignal | undefined;
+    const fetch = ((_url: string, init: RequestInit) => {
+      signal = init.signal ?? undefined;
+      // A server that never answers: the promise ends only when the signal aborts.
+      return new Promise((_resolve, reject) => init.signal?.addEventListener('abort', () => reject(init.signal?.reason)));
+    }) as unknown as typeof globalThis.fetch;
+    const send = ntfyNotifier({ server: 'https://ntfy.example.com', topic: 'secret-topic', timeoutMs: 20 }, fetch).send(message);
+    await expect(send).rejects.toThrow('ntfy: the request to ntfy.example.com failed: no answer within 20 ms');
+    expect(signal?.aborted).toBe(true);
+  });
+
+  it('gives every request a time limit by default', async () => {
+    const { calls, fetch } = fakeFetch();
+    await ntfyNotifier({ server: 'https://ntfy.example.com', topic: 't' }, fetch).send(message);
+    expect(calls[0]?.init.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('refuses a token with a control character', () => {
+    for (const token of ['tk_a\nInjected: yes', 'tk_a\r', 'tk_\u0000', 'tk_\u007f']) {
+      expect(() => ntfyNotifier({ server: 'https://ntfy.example.com', topic: 't', token }), JSON.stringify(token)).toThrow(
+        'FLAREALOY_NTFY_TOKEN must not hold control characters such as a line break',
+      );
+    }
+    expect(() => notifierFromEnv({ FLAREALOY_NTFY_TOPIC: 't', FLAREALOY_NTFY_TOKEN: 'tk_a\nb' })).toThrow(NotifierConfigError);
+  });
+
   it('refuses a bad server URL or topic', () => {
     expect(() => ntfyNotifier({ server: 'ftp://ntfy.example.com', topic: 't' })).toThrow(NotifierConfigError);
     expect(() => ntfyNotifier({ server: 'not a url', topic: 't' })).toThrow('FLAREALOY_NTFY_URL is not a URL');

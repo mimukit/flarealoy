@@ -30,13 +30,18 @@ export interface SentAlert {
 }
 
 /**
- * The record of sent keys. `claim` adds the key and returns true, or returns false when the key is
- * already there; it is atomic, so two processes never both claim one key. `release` removes a key
- * whose send failed, so the next run tries again.
+ * The record of sent keys. A key goes in only after its send succeeded, so a process that stops
+ * mid-send leaves no key and the next run sends again: an alert goes out at least once.
  */
 export interface AlertLog {
-  claim(alert: SentAlert): boolean | Promise<boolean>;
+  /** True when the key is already recorded as sent. */
+  has(dedupeKey: string): boolean | Promise<boolean>;
+  /** Records a sent key. A key that is already there stays as it is. */
+  record(alert: SentAlert): void | Promise<void>;
+  /** Removes a key, so the same alert can go out again later. */
   release(dedupeKey: string): void | Promise<void>;
+  /** Every recorded key that starts with `prefix`, oldest first. */
+  keys(prefix: string): string[] | Promise<string[]>;
 }
 
 /** Thrown when no channel is configured or a channel's configuration is wrong. */
@@ -50,18 +55,13 @@ export class NotifierConfigError extends Error {
 export type SendResult = 'sent' | 'duplicate';
 
 /**
- * Sends one alert through `notifier` unless `log` already holds its dedupe key. It claims the key
- * first and releases it when the send throws, then throws the send error again.
+ * Sends one alert through `notifier` unless `log` already holds its dedupe key. The key is
+ * recorded only after the send succeeds; a send that throws records nothing and throws again.
  */
 export async function sendAlert(notifier: Notifier, log: AlertLog, message: AlertMessage, now: Date): Promise<SendResult> {
-  const claimed = await log.claim({ dedupeKey: message.dedupeKey, title: message.title, severity: message.severity, sentAt: now.toISOString() });
-  if (!claimed) return 'duplicate';
-  try {
-    await notifier.send(message);
-  } catch (error) {
-    await log.release(message.dedupeKey);
-    throw error;
-  }
+  if (await log.has(message.dedupeKey)) return 'duplicate';
+  await notifier.send(message);
+  await log.record({ dedupeKey: message.dedupeKey, title: message.title, severity: message.severity, sentAt: now.toISOString() });
   return 'sent';
 }
 
