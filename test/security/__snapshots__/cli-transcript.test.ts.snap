@@ -276,9 +276,11 @@ exports[`export and import > export, then import into a new file, then refuse a 
     "out": "",
   },
   "log": {
-    "code": 2,
-    "err": "no flarealoy database at <dir>/copy.sqlite; run flarealoy security init",
-    "out": "",
+    "code": 0,
+    "err": "",
+    "out": "#1  2026-10-22T09:00:00.000Z  baseline  approved  owner
+#2  2026-10-22T09:00:01.000Z  example.com inventory  approved  owner
+#3  2026-10-22T09:00:02.000Z  example.net inventory  approved  owner",
   },
   "second": {
     "code": 2,

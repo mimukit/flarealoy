@@ -2,6 +2,7 @@
 // and an in-memory store, with stdout, stderr, and the exit code snapshotted per scenario.
 // It locks the behavior for the later move and the later command rename.
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import type { DatabaseSync } from 'node:sqlite';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -11,6 +12,8 @@ import { parseInventory } from '../../src/modules/security/core/schema.js';
 import type { DataStore } from '../../src/modules/security/core/store.js';
 import type { Editor } from '../../src/modules/security/node/edit.js';
 import { FakeCloudflareApi, liveFromDesired } from './fake-api.js';
+import { exportDatabase, importDatabase, MEMORY, openDatabase } from '../../src/node/sqlite-store.js';
+import { securityStore } from '../../src/modules/security/node/sqlite-store.js';
 import { defaultBaseline, memoryStore, putBaseline, putInventory } from './helpers.js';
 
 const ACCOUNT = '01a7362d577a6c3019a474fd6f485823';
@@ -43,6 +46,8 @@ const TOKEN = { CLOUDFLARE_API_TOKEN: 'test-token' };
 
 let tick: number;
 let store: DataStore;
+/** The database handle under the in-memory store, so a test can export it through the platform core. */
+let db: DatabaseSync;
 let api: FakeCloudflareApi;
 let dir: string;
 let stdin: string;
@@ -101,7 +106,8 @@ function addNetZone() {
 
 beforeEach(async () => {
   tick = 0;
-  store = memoryStore(clock);
+  db = openDatabase(MEMORY);
+  store = securityStore(db, MEMORY, clock);
   await putBaseline(store);
   await putInventory(store, 'example.com', COM);
   await putInventory(store, 'example.net', NET);
@@ -375,6 +381,10 @@ describe('export and import', () => {
     const env = { FLAREALOY_DB: join(dir, 'copy.sqlite') };
     const imported = await fileCli(['import', file], env);
     const second = await fileCli(['import', file], env);
+    // Build the copy through the platform core (flarealoy export and import), outside the snapshot.
+    const copy = openDatabase(env.FLAREALOY_DB, { create: true });
+    importDatabase(copy, exportDatabase(db), env.FLAREALOY_DB);
+    copy.close();
     const log = await fileCli(['log'], env);
     expect({ exported, again, imported, second, log }).toMatchSnapshot();
   });
