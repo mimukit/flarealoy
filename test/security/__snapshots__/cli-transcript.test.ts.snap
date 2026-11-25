@@ -36,9 +36,9 @@ exports[`add > writes the first inventory revision of a visible zone 1`] = `
     "code": 0,
     "err": "",
     "out": "# revision 2: example.com inventory, approved, by owner, 2026-10-22T09:00:04.000Z
-# parent none, sha256 7e169ef87a0926da7fc187ef4296e5fea9e39982ae38f403aa4517976760be7f
+# parent none, sha256 0e19d2357e0f69e3d0075542db680b37382287ac56ef89c1fafeb888a71a35b3
 # message: flarealoy security add
-# Inventory for example.com, written by flarewall add.
+# Inventory for example.com, written by flarealoy security add.
 # Put each host below in hosts.api or hosts.wordpress where it fits, then check redirects.
 # Proxied hostnames in this zone:
 #   api.example.com

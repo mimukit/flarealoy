@@ -2,17 +2,18 @@
 
 ## What this project is
 
-flarewall keeps a set of Cloudflare zones on one security baseline. It applies a baseline file to each zone, checks every zone for drift on a schedule, and shows all zones on one screen. It targets the Cloudflare Free plan.
+Flarealoy manages and monitors Cloudflare accounts through one `flarealoy` command with modules. The `security` module keeps a set of Cloudflare zones on one security baseline: it applies the baseline to each zone, checks every zone for drift on a schedule, sends drift alerts, and shows all zones on one screen. It targets the Cloudflare Free plan. A `usage` module for plan limit alerts comes from its own plan. The service runs as `flarealoy run` in one Docker container on the owner's server, deployed with Dokploy.
 
-The plan is `docs/plans/0001-plan-flarewall-2026-10-21.md`. Its Design decisions table is the source of truth for the stack and the architecture. Read it before you change either.
+The current plan is `docs/plans/0004-plan-flarealoy-migration-2026-11-25.md`. Its Design decisions table is the source of truth for the platform layout, the store, the tokens and the deploy; it supersedes rows of plans 0001 and 0003, which still hold the security module decisions. Read them before you change the stack or the architecture.
 
 ## Stack
 
-- TypeScript on Node 22 or later, published to npm as `flarewall`.
+- TypeScript on Node 22.13 or later (for `node:sqlite`), published to npm as `flarealoy`. The old `flarewall` npm name is a deprecated placeholder in `npm/flarewall-placeholder/`.
 - The official `cloudflare` SDK, pinned to an exact 7.x version. Security Events use one raw `fetch` to the GraphQL endpoint.
 - Zod 4 for the baseline and inventory schemas.
 - Vitest for tests, with snapshot tests for the `render` step.
-- Ink 8 for the TUI. Only the `tui` command loads it.
+- Ink 8 for the TUI. Only the `security tui` command loads it.
+- Docker and Dokploy for the server: `Dockerfile` and `compose.example.yaml`.
 
 ## Build and test
 
@@ -25,12 +26,13 @@ The plan is `docs/plans/0001-plan-flarewall-2026-10-21.md`. Its Design decisions
 
 ## Rules for agents
 
-- Never put private data in this repo: account IDs, zone IDs or names, client names, host roles, origin IPs, backups, or tokens. That data lives in a local SQLite file outside every repo (`FLAREWALL_DB`); plan 0003 (`docs/plans/0003-plan-d1-data-store-2026-10-21.md`) replaced the old private data repo. Never commit a database file or an export. Test fixtures use `example.com` hosts and RFC 5737 IP addresses.
-- Never write a Cloudflare token to a file. The tool reads tokens from the environment only: `CLOUDFLARE_API_TOKEN` for reads (or the variable an account names in `token_env`), and `CLOUDFLARE_WRITE_TOKEN` for writes.
-- Never run `apply` with the write flag against a live zone. The owner runs writes.
+- Never put private data in this repo: account IDs, zone IDs or names, client names, host roles, origin IPs, backups, or tokens. That data lives in one SQLite file outside every repo: on the server at `/data/flarealoy.sqlite` in the Docker volume, named by `FLAREALOY_DB`. A local `FLAREALOY_DB` file is for development and tests only. Plan 0003 replaced the old private data repo, and plan 0004 moved the file to the server. Never commit a database file or an export. Test fixtures use `example.com` hosts and RFC 5737 IP addresses.
+- Never write a Cloudflare token to a file. The tool reads tokens from the environment only: `CLOUDFLARE_API_TOKEN` for reads (or the variable an account names in `token_env`), and `CLOUDFLARE_WRITE_TOKEN` for writes. The owner sets both on the server as Dokploy environment values.
+- Never run `npm publish`, `npm deprecate` or any npm command that writes to the registry, and never add an `NPM_TOKEN`. The owner publishes by hand.
+- Never run `flarealoy security apply` or `flarealoy security restore` with `--write` against a live zone. The owner runs writes.
 - Keep the core free of logic in the TUI or the skill. Both call the core.
-- Keep the core free of Node-only APIs, so a Worker can run it later.
-- Every rule flarewall creates carries a `ref` that starts with `flarewall_`. Never delete or rewrite a rule without that prefix.
+- Keep `src/core/` and every `src/modules/*/core/` folder free of Node-only APIs, so a Worker can run them later. `test/core/purity.test.ts` checks this.
+- Every rule Flarealoy creates carries a `ref` that starts with `flarewall_`, kept from before the rename so live rules stay owned. Never delete or rewrite a rule without that prefix.
 
 ## Docs artifact naming
 

@@ -1,5 +1,5 @@
 // Starts the TUI: builds the store and the runner, then renders the app on the alternate screen.
-// Only `flarewall tui` loads this module, with a dynamic import, so no other command loads Ink.
+// Only `flarealoy security tui` loads this module, with a dynamic import, so no other command loads Ink.
 import { render } from 'ink';
 import type { ReactElement } from 'react';
 import type { CloudflareApi } from '../core/api.js';
