@@ -158,7 +158,10 @@ async function runWithLimits(job: Job, options: SchedulerOptions): Promise<Outco
     }
   })();
   try {
-    return await Promise.race([done, stopped, timedOut.then((outcome) => outcome ?? done)]);
+    const outcome = await Promise.race([done, stopped, timedOut.then((result) => result ?? done)]);
+    // A job that ends with an error after the stop ended because of the stop: it counts as stopped.
+    if (outcome.kind === 'done' && outcome.error !== null && stop.aborted) return { kind: 'stopped' };
+    return outcome;
   } finally {
     timer.abort();
     stop.removeEventListener('abort', onStop);

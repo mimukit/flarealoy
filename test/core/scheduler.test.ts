@@ -200,6 +200,26 @@ describe('runScheduler with a fake clock', () => {
     expect(c.out.at(-1)).toMatch(/flarealoy run: stopped$/);
   });
 
+  it('records no run for a job that stops on its signal when the service stops', async () => {
+    const controller = new AbortController();
+    const clock = fakeClock(T0, T0 + 60 * MIN, controller);
+    const obeying: Job = {
+      name: 'test.obeying',
+      intervalMs: 10 * MIN,
+      run: (signal) => {
+        queueMicrotask(() => controller.abort());
+        return new Promise<void>((_resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason), { once: true }));
+      },
+    };
+    const store = memoryRuns();
+    const c = capture();
+
+    await runScheduler([obeying], { clock, store, log: c.log, signal: controller.signal });
+
+    expect(store.rows.size).toBe(0);
+    expect(c.err).toEqual(['2026-11-25T00:00:00.000Z job test.obeying stopped 0ms: the service stops; the run is not recorded']);
+  });
+
   it('runs a job whose stored start is not a time now, once, then on its interval', async () => {
     const controller = new AbortController();
     const clock = fakeClock(T0, T0 + 25 * MIN, controller);
