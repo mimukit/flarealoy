@@ -170,9 +170,9 @@ describe('not managed and add (C9)', () => {
     });
     const first = await cli('add', 'example.org');
     expect(first.code).toBe(0);
-    expect(first.out).toBe('saved example.org inventory revision 2; sort its hosts with flarewall edit example.org');
+    expect(first.out).toBe('saved example.org inventory revision 2; sort its hosts with flarealoy security edit example.org');
     const revision = await store.current({ kind: 'inventory', zone: 'example.org' });
-    expect(revision).toMatchObject({ id: 2, status: 'approved', author: 'owner', message: 'flarewall add' });
+    expect(revision).toMatchObject({ id: 2, status: 'approved', author: 'owner', message: 'flarealoy security add' });
     const text = revision?.text ?? '';
     expect(parseInventory(text)).toEqual({
       version: 1,
@@ -186,7 +186,7 @@ describe('not managed and add (C9)', () => {
 
     const second = await cli('add', 'example.org');
     expect(second.code).toBe(2);
-    expect(second.err).toBe('example.org already has inventory revision 2; flarewall add does not overwrite it');
+    expect(second.err).toBe('example.org already has inventory revision 2; flarealoy security add does not overwrite it');
     expect(await store.listRevisions({ zone: 'example.org' })).toHaveLength(1);
   });
 
@@ -235,7 +235,7 @@ describe('errors (C10)', () => {
     const empty = memoryStore();
     const c = capture();
     expect(await run(['status'], env(), c.io, { api: () => api, store: empty })).toBe(2);
-    expect(c.err.join('\n')).toBe('the database at :memory: holds no baseline; run flarewall init');
+    expect(c.err.join('\n')).toBe('the database at :memory: holds no baseline; run flarealoy security init');
     empty.close();
   });
 });

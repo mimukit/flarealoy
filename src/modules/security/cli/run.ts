@@ -71,7 +71,7 @@ const defaultReadStdin = async (): Promise<string> => {
   return Buffer.concat(chunks).toString('utf8');
 };
 
-const USAGE = `Usage: flarewall <command> [options]
+const USAGE = `Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -106,16 +106,16 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
 Exit codes (status, diff): 0 in sync, 1 drift or legacy, 2 error
 Exit codes (other commands): 0 done or declined, 2 any failure or a usage error`;
 
-const TOKEN_MISSING = 'CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only';
-const DATA_GONE = '--data is gone; flarewall reads FLAREWALL_DB';
+const TOKEN_MISSING = 'CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only';
+const DATA_GONE = '--data is gone; flarealoy reads FLAREALOY_DB';
 
 function message(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -206,7 +206,7 @@ export async function run(
   /** Refuses a write that nobody can confirm. */
   const writeRefused = (): boolean => {
     if (write && !yes && !(deps.isTTY ?? process.stdin.isTTY === true)) {
-      io.err('refusing to write: stdin is not a terminal, so flarewall cannot ask per zone; pass --yes to write without asking');
+      io.err('refusing to write: stdin is not a terminal, so flarealoy cannot ask per zone; pass --yes to write without asking');
       return true;
     }
     return false;
@@ -247,11 +247,11 @@ export async function run(
         const store = await openStore(true);
         const baseline: DocRef = { kind: 'baseline', zone: null };
         if ((await store.current(baseline)) !== undefined) {
-          io.err(`the database at ${store.location} already holds a baseline; flarewall init does not overwrite it`);
+          io.err(`the database at ${store.location} already holds a baseline; flarealoy security init does not overwrite it`);
           return 2;
         }
         const { readDefaultBaseline } = await import('../node/default-baseline.js');
-        const revision = await store.addRevision({ ...baseline, status: 'approved', text: await readDefaultBaseline(), author: 'owner', message: 'flarewall init' });
+        const revision = await store.addRevision({ ...baseline, status: 'approved', text: await readDefaultBaseline(), author: 'owner', message: 'flarealoy security init' });
         io.out(`baseline revision ${revision.id} written to ${store.location}`);
         return 0;
       }
@@ -264,7 +264,7 @@ export async function run(
         const api = await connect();
         if (api === undefined) return 2;
         const revision = await addZoneInventory(api, store, rest[0]);
-        io.out(`saved ${revisionDoc(revision)} revision ${revision.id}; sort its hosts with flarewall edit ${rest[0]}`);
+        io.out(`saved ${revisionDoc(revision)} revision ${revision.id}; sort its hosts with flarealoy security edit ${rest[0]}`);
         return 0;
       }
       case 'status':
@@ -294,7 +294,7 @@ export async function run(
         for (const name of all ? inventories.map((i) => i.zone) : rest) {
           const inventory: Inventory | undefined = inventories.find((i) => i.zone === name);
           if (inventory === undefined) {
-            io.err(`${name}: error: no inventory entry; run flarewall add ${name}`);
+            io.err(`${name}: error: no inventory entry; run flarealoy security add ${name}`);
             failed = true;
             continue;
           }
@@ -324,7 +324,7 @@ export async function run(
         const store = await openStore();
         const row = await store.getBackup(id);
         if (row === undefined || row.zone !== name) {
-          io.err(`${name}: error: no backup ${id} for this zone; list them with flarewall backups ${name}`);
+          io.err(`${name}: error: no backup ${id} for this zone; list them with flarealoy security backups ${name}`);
           return 2;
         }
         const backup = parseBackup(id, row.backup);
@@ -369,7 +369,7 @@ export async function run(
         const store = await openStore();
         const current = await store.current(doc);
         if (current === undefined) {
-          io.err(doc.kind === 'baseline' ? 'no baseline yet; run flarewall init first' : `run flarewall add ${doc.zone} first`);
+          io.err(doc.kind === 'baseline' ? 'no baseline yet; run flarealoy security init first' : `run flarealoy security add ${doc.zone} first`);
           return 2;
         }
         const { editText, shellEditor } = await import('../node/edit.js');
@@ -462,7 +462,7 @@ export async function run(
         try {
           await writeFile(rest[0], exportText(await store.exportData()), { flag: 'wx', mode: 0o600 });
         } catch (error) {
-          if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new DataError(`${rest[0]} already exists; flarewall export does not overwrite it`);
+          if ((error as NodeJS.ErrnoException).code === 'EEXIST') throw new DataError(`${rest[0]} already exists; flarealoy security export does not overwrite it`);
           throw error;
         }
         io.out(`exported ${store.location} to ${rest[0]}`);

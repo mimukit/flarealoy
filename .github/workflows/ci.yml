@@ -36,7 +36,7 @@ jobs:
       # The script exits 2 when the secret is empty or missing, so this job fails without it.
       - run: node scripts/check-private-strings.mjs
         env:
-          FLAREWALL_PRIVATE_STRINGS: ${{ secrets.FLAREWALL_PRIVATE_STRINGS }}
+          FLAREALOY_PRIVATE_STRINGS: ${{ secrets.FLAREWALL_PRIVATE_STRINGS }}
 
   gitleaks:
     name: gitleaks

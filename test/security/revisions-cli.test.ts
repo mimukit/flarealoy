@@ -63,7 +63,7 @@ describe('edit', () => {
     const shown: string[] = [];
     const result = await cli(['edit', 'example.com'], { editor: scriptedEditor(['version: 2\n', COM_API], shown) });
     expect(result.code).toBe(0);
-    expect(shown[1]).toMatch(/^# flarewall: /);
+    expect(shown[1]).toMatch(/^# flarealoy: /);
     expect(shown[1]).toContain('version: 2');
     expect((await store.current({ kind: 'inventory', zone: 'example.com' }))?.text).toBe(COM_API);
   });
@@ -71,7 +71,7 @@ describe('edit', () => {
   it('refuses a text that names another zone', async () => {
     const shown: string[] = [];
     await cli(['edit', 'example.com'], { editor: scriptedEditor([COM.replace('zone: example.com', 'zone: example.net'), COM_API], shown) });
-    expect(shown[1]).toContain('# flarewall: the inventory names zone example.net, not example.com');
+    expect(shown[1]).toContain('# flarealoy: the inventory names zone example.net, not example.com');
   });
 
   it('saves nothing for an unchanged or emptied file', async () => {
@@ -83,7 +83,7 @@ describe('edit', () => {
   it('refuses a zone with no inventory', async () => {
     const result = await cli(['edit', 'example.net'], { editor: scriptedEditor([COM]) });
     expect(result.code).toBe(2);
-    expect(result.err).toBe('run flarewall add example.net first');
+    expect(result.err).toBe('run flarealoy security add example.net first');
   });
 });
 
@@ -110,7 +110,7 @@ describe('propose, approve, and reject', () => {
 
   it('refuses a zone with no inventory, an invalid text, and no change', async () => {
     stdin = COM;
-    expect((await cli(['propose', 'example.net', '-'])).err).toBe('run flarewall add example.net first');
+    expect((await cli(['propose', 'example.net', '-'])).err).toBe('run flarealoy security add example.net first');
     expect((await cli(['propose', 'example.com', '-'])).err).toBe('example.com: no change');
     stdin = 'version: 2\n';
     expect((await cli(['propose', 'example.com', '-'])).err).toMatch(/^example\.com: /);
@@ -177,18 +177,18 @@ describe('export and import', () => {
     const first = join(dir, 'first.json');
     expect((await cli(['export', first])).code).toBe(0);
     expect(statSync(first).mode & 0o777).toBe(0o600);
-    expect((await cli(['export', first])).err).toBe(`${first} already exists; flarewall export does not overwrite it`);
+    expect((await cli(['export', first])).err).toBe(`${first} already exists; flarealoy security export does not overwrite it`);
 
     const db = join(dir, 'copy.sqlite');
-    const imported = await run(['import', first], { FLAREWALL_DB: db }, { out: () => {}, err: () => {} });
+    const imported = await run(['import', first], { FLAREALOY_DB: db }, { out: () => {}, err: () => {} });
     expect(imported).toBe(0);
     const second = join(dir, 'second.json');
-    expect(await run(['export', second], { FLAREWALL_DB: db }, { out: () => {}, err: () => {} })).toBe(0);
+    expect(await run(['export', second], { FLAREALOY_DB: db }, { out: () => {}, err: () => {} })).toBe(0);
     expect(readFileSync(second, 'utf8')).toBe(readFileSync(first, 'utf8'));
 
     const err: string[] = [];
-    expect(await run(['import', first], { FLAREWALL_DB: db }, { out: () => {}, err: (l) => err.push(l) })).toBe(2);
-    expect(err).toEqual([`${db} is not empty; flarewall import loads into an empty database only`]);
+    expect(await run(['import', first], { FLAREALOY_DB: db }, { out: () => {}, err: (l) => err.push(l) })).toBe(2);
+    expect(err).toEqual([`${db} is not empty; flarealoy security import loads into an empty database only`]);
   });
 });
 

@@ -13,7 +13,7 @@ function capture() {
   return { io: { out: (l: string) => out.push(l), err: (l: string) => err.push(l) }, out, err };
 }
 
-describe('flarewall init', () => {
+describe('flarealoy security init', () => {
   let dir: string;
   let db: string;
   beforeEach(() => {
@@ -24,9 +24,9 @@ describe('flarewall init', () => {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  it('creates the file at FLAREWALL_DB, writes the default baseline as revision 1, and prints its id', async () => {
+  it('creates the file at FLAREALOY_DB, writes the default baseline as revision 1, and prints its id', async () => {
     const c = capture();
-    expect(await run(['init'], { FLAREWALL_DB: db }, c.io)).toBe(0);
+    expect(await run(['init'], { FLAREALOY_DB: db }, c.io)).toBe(0);
     expect(c.out).toEqual([`baseline revision 1 written to ${db}`]);
     expect(statSync(db).mode & 0o777).toBe(0o600);
     const store = openSqliteStore(db);
@@ -35,7 +35,7 @@ describe('flarewall init', () => {
         id: 1,
         status: 'approved',
         author: 'owner',
-        message: 'flarewall init',
+        message: 'flarealoy security init',
         text: readFileSync(DEFAULT_BASELINE_FILE, 'utf8'),
       });
     } finally {
@@ -43,38 +43,38 @@ describe('flarewall init', () => {
     }
   });
 
-  it('uses XDG_DATA_HOME when FLAREWALL_DB is not set', async () => {
+  it('uses XDG_DATA_HOME when FLAREALOY_DB is not set', async () => {
     expect(await run(['init'], { XDG_DATA_HOME: dir }, capture().io)).toBe(0);
-    expect(statSync(join(dir, 'flarewall', 'flarewall.sqlite')).isFile()).toBe(true);
+    expect(statSync(join(dir, 'flarealoy', 'flarealoy.sqlite')).isFile()).toBe(true);
   });
 
   it('refuses to init a database that holds a baseline', async () => {
-    expect(await run(['init'], { FLAREWALL_DB: db }, capture().io)).toBe(0);
+    expect(await run(['init'], { FLAREALOY_DB: db }, capture().io)).toBe(0);
     const c = capture();
-    expect(await run(['init'], { FLAREWALL_DB: db }, c.io)).toBe(2);
-    expect(c.err).toEqual([`the database at ${db} already holds a baseline; flarewall init does not overwrite it`]);
+    expect(await run(['init'], { FLAREALOY_DB: db }, c.io)).toBe(2);
+    expect(c.err).toEqual([`the database at ${db} already holds a baseline; flarealoy security init does not overwrite it`]);
   });
 
   it('every other command stops when the file is missing', async () => {
     for (const argv of [['log'], ['status'], ['show', '1'], ['backups', 'example.com']]) {
       const c = capture();
-      expect(await run(argv, { FLAREWALL_DB: db, CLOUDFLARE_API_TOKEN: 'test-token' }, c.io)).toBe(2);
-      expect(c.err).toEqual([`no flarewall database at ${db}; run flarewall init`]);
+      expect(await run(argv, { FLAREALOY_DB: db, CLOUDFLARE_API_TOKEN: 'test-token' }, c.io)).toBe(2);
+      expect(c.err).toEqual([`no flarealoy database at ${db}; run flarealoy security init`]);
     }
   });
 
-  it('--data and FLAREWALL_DATA stop the command and name FLAREWALL_DB', async () => {
+  it('--data and FLAREWALL_DATA stop the command and name FLAREALOY_DB', async () => {
     for (const [argv, env] of [
       [['init', '--data', dir], {}],
       [['status'], { FLAREWALL_DATA: dir }],
     ] as const) {
       const c = capture();
-      expect(await run([...argv], { ...env, FLAREWALL_DB: db }, c.io)).toBe(2);
-      expect(c.err).toEqual(['--data is gone; flarewall reads FLAREWALL_DB']);
+      expect(await run([...argv], { ...env, FLAREALOY_DB: db }, c.io)).toBe(2);
+      expect(c.err).toEqual(['--data is gone; flarealoy reads FLAREALOY_DB']);
     }
   });
 
   it('rejects an unknown command', async () => {
-    expect(await run(['nope'], { FLAREWALL_DB: db }, capture().io)).toBe(2);
+    expect(await run(['nope'], { FLAREALOY_DB: db }, capture().io)).toBe(2);
   });
 });

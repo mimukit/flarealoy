@@ -19,8 +19,8 @@ The plan is `docs/plans/0001-plan-flarewall-2026-10-21.md`. Its Design decisions
 - Install: `pnpm install`
 - Typecheck: `pnpm typecheck`
 - Test: `pnpm test` (update render snapshots with `pnpm test -u` only after you check the change)
-- Build: `pnpm build` (compiles `src/` to `dist/` and copies `src/baseline/default.yaml` to `dist/baseline/`)
-- Private string check: `FLAREWALL_PRIVATE_STRINGS='<one string per line>' pnpm check:private`
+- Build: `pnpm build` (compiles `src/` to `dist/` and copies `src/modules/security/baseline/default.yaml` to `dist/modules/security/baseline/`)
+- Private string check: `FLAREALOY_PRIVATE_STRINGS='<one string per line>' pnpm check:private`
 - Package contents: `npm pack --dry-run`
 
 ## Rules for agents

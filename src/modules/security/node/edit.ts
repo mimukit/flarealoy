@@ -7,7 +7,7 @@ import { join } from 'node:path';
 /** Opens the editor on a file and resolves when it exits. Tests pass a fake. */
 export type Editor = (file: string) => Promise<void>;
 
-const ERROR_PREFIX = '# flarewall: ';
+const ERROR_PREFIX = '# flarealoy: ';
 
 /** The editor in $VISUAL or $EDITOR (vi when neither is set), run through sh so it can carry flags. */
 export function shellEditor(env: Record<string, string | undefined>): Editor {

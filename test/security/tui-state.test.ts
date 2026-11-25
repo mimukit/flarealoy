@@ -639,7 +639,7 @@ describe('TUI reducer, + add', () => {
     expect(r.effects).toEqual([{ kind: 'load', gen: s.gen + 1 }]);
     expect(r.state.mode).toEqual({ kind: 'normal' });
     expect(r.state.adding).toBeUndefined();
-    expect(paneText(r.state)).toEqual(['e.example.com: saved inventory revision 7; sort its hosts with flarewall edit e.example.com, then press R']);
+    expect(paneText(r.state)).toEqual(['e.example.com: saved inventory revision 7; sort its hosts with flarealoy security edit e.example.com, then press R']);
   });
 
   it('a failed add shows its error, and the zone stays selected through the reload', () => {
@@ -784,7 +784,7 @@ describe('TUI screen helpers', () => {
   });
 
   it('shows the next step for a not managed zone', () => {
-    expect(body(select(loaded(), 'e.example.com'))).toEqual(['No inventory entry for this zone.', 'Press + to add it, as flarewall add e.example.com does.']);
+    expect(body(select(loaded(), 'e.example.com'))).toEqual(['No inventory entry for this zone.', 'Press + to add it, as flarealoy security add e.example.com does.']);
   });
 
   it('shows the empty state when no zone has an inventory entry', () => {
@@ -793,7 +793,7 @@ describe('TUI screen helpers', () => {
     expect(headerCounts(none)).toContainEqual({ word: 'not managed', count: 5 });
     expect(body(none)).toEqual([
       'No inventory entry for this zone.',
-      'Press + to add it, as flarewall add a.example.com does.',
+      'Press + to add it, as flarealoy security add a.example.com does.',
       '',
       'No zone has an inventory entry: 0 of 5 zones are managed.',
       'Mark the zones you want to manage with space, then press +.',

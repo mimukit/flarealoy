@@ -40,7 +40,7 @@ function revisionLabel(revision: Revision): string {
  */
 export async function loadDataSet(store: DataStore): Promise<DataSet> {
   const base = await store.current({ kind: 'baseline', zone: null });
-  if (base === undefined) throw new DataError(`the database at ${store.location} holds no baseline; run flarewall init`);
+  if (base === undefined) throw new DataError(`the database at ${store.location} holds no baseline; run flarealoy security init`);
   const parse = <T>(revision: Revision, fn: (text: string) => T): T => {
     try {
       return fn(revision.text);
@@ -90,7 +90,7 @@ export async function saveOwnerRevision(store: DataStore, doc: DocRef, text: str
 export async function proposeRevision(store: DataStore, doc: DocRef, text: string, author: string, message?: string | null): Promise<Revision> {
   const current = await store.current(doc);
   if (current === undefined) {
-    throw new DataError(doc.kind === 'baseline' ? 'no baseline yet; run flarewall init first' : `run flarewall add ${doc.zone} first`);
+    throw new DataError(doc.kind === 'baseline' ? 'no baseline yet; run flarealoy security init first' : `run flarealoy security add ${doc.zone} first`);
   }
   try {
     parseDoc(doc, text);
@@ -112,7 +112,7 @@ export async function revertTo(store: DataStore, id: number, message?: string | 
 /** The text of a new inventory. The proxied hostnames go in as comments for the owner to sort. */
 export function newInventoryText(zone: string, zoneId: string, proxiedHosts: readonly string[]): string {
   const lines = [
-    `# Inventory for ${zone}, written by flarewall add.`,
+    `# Inventory for ${zone}, written by flarealoy security add.`,
     '# Put each host below in hosts.api or hosts.wordpress where it fits, then check redirects.',
     '# Proxied hostnames in this zone:',
     ...(proxiedHosts.length > 0 ? proxiedHosts.map((h) => `#   ${h}`) : ['#   (none)']),
@@ -137,10 +137,10 @@ export async function addZoneInventory(api: CloudflareApi, store: DataStore, zon
   if (zone === undefined) throw new DataError(`zone ${zoneName} not found: the token cannot see it`);
   const doc: DocRef = { kind: 'inventory', zone: zone.name };
   const current = await store.current(doc);
-  if (current !== undefined) throw new DataError(`${zone.name} already has inventory revision ${current.id}; flarewall add does not overwrite it`);
+  if (current !== undefined) throw new DataError(`${zone.name} already has inventory revision ${current.id}; flarealoy security add does not overwrite it`);
   const records = await api.listDnsRecords(zone.id);
   const hosts = [...new Set(records.filter((r) => r.proxied).map((r) => r.name))].sort();
-  return store.addRevision({ ...doc, status: 'approved', text: newInventoryText(zone.name, zone.id, hosts), author: 'owner', message: 'flarewall add' });
+  return store.addRevision({ ...doc, status: 'approved', text: newInventoryText(zone.name, zone.id, hosts), author: 'owner', message: 'flarealoy security add' });
 }
 
 /** A BackupWriter that stores each backup as a row and returns `backup <id>`. */

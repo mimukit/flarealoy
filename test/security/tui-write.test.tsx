@@ -150,7 +150,7 @@ describe('TUI add', () => {
     const revision = await db.current({ kind: 'inventory', zone: 'new.example.com' });
     expect(revision).toMatchObject({ id: 5, status: 'approved', author: 'owner' });
     expect(revision?.text).toContain('#   www.new.example.com');
-    expect(flat(diffColumn(screen.frame()))).toContain('new.example.com: saved inventory revision 5; sort its hosts with flarewall edit new.example.com, then press R');
+    expect(flat(diffColumn(screen.frame()))).toContain('new.example.com: saved inventory revision 5; sort its hosts with flarealoy security edit new.example.com, then press R');
   });
 });
 

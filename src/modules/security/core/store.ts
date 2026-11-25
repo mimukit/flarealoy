@@ -183,7 +183,7 @@ export function parseExport(text: string): StoreExport {
   const result = exportSchema.safeParse(json);
   if (!result.success) {
     const issue = result.error.issues[0];
-    throw new StoreError(`not a flarewall export: ${issue?.path.join('.') ?? ''}: ${issue?.message ?? 'invalid'}`);
+    throw new StoreError(`not a flarealoy export: ${issue?.path.join('.') ?? ''}: ${issue?.message ?? 'invalid'}`);
   }
   return result.data;
 }

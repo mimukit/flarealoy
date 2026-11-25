@@ -4,7 +4,7 @@ exports[`add > refuses a zone that has an inventory, a zone the token cannot see
 {
   "existing": {
     "code": 2,
-    "err": "example.com already has inventory revision 2; flarewall add does not overwrite it",
+    "err": "example.com already has inventory revision 2; flarealoy security add does not overwrite it",
     "out": "",
   },
   "none": {
@@ -30,15 +30,15 @@ exports[`add > writes the first inventory revision of a visible zone 1`] = `
   "added": {
     "code": 0,
     "err": "",
-    "out": "saved example.com inventory revision 2; sort its hosts with flarewall edit example.com",
+    "out": "saved example.com inventory revision 2; sort its hosts with flarealoy security edit example.com",
   },
   "show": {
     "code": 0,
     "err": "",
     "out": "# revision 2: example.com inventory, approved, by owner, 2026-10-22T09:00:04.000Z
-# parent none, sha256 7e169ef87a0926da7fc187ef4296e5fea9e39982ae38f403aa4517976760be7f
-# message: flarewall add
-# Inventory for example.com, written by flarewall add.
+# parent none, sha256 0e19d2357e0f69e3d0075542db680b37382287ac56ef89c1fafeb888a71a35b3
+# message: flarealoy security add
+# Inventory for example.com, written by flarealoy security add.
 # Put each host below in hosts.api or hosts.wordpress where it fits, then check redirects.
 # Proxied hostnames in this zone:
 #   api.example.com
@@ -159,12 +159,12 @@ exports[`apply > error paths 1`] = `
   },
   "noInventory": {
     "code": 2,
-    "err": "other.example.net: error: no inventory entry; run flarewall add other.example.net",
+    "err": "other.example.net: error: no inventory entry; run flarealoy security add other.example.net",
     "out": "",
   },
   "noTty": {
     "code": 2,
-    "err": "refusing to write: stdin is not a terminal, so flarewall cannot ask per zone; pass --yes to write without asking",
+    "err": "refusing to write: stdin is not a terminal, so flarealoy cannot ask per zone; pass --yes to write without asking",
     "out": "",
   },
   "none": {
@@ -194,7 +194,7 @@ exports[`edit > no change, emptied, and error paths 1`] = `
   },
   "noInventory": {
     "code": 2,
-    "err": "run flarewall add other.example.net first",
+    "err": "run flarealoy security add other.example.net first",
     "out": "",
   },
   "unchanged": {
@@ -247,7 +247,7 @@ exports[`export and import > error paths 1`] = `
   },
   "importBad": {
     "code": 2,
-    "err": "not a flarewall export: flarewall_export: Invalid input: expected 1",
+    "err": "not a flarealoy export: flarewall_export: Invalid input: expected 1",
     "out": "",
   },
   "importMissing": {
@@ -262,7 +262,7 @@ exports[`export and import > export, then import into a new file, then refuse a 
 {
   "again": {
     "code": 2,
-    "err": "<dir>/export.json already exists; flarewall export does not overwrite it",
+    "err": "<dir>/export.json already exists; flarealoy security export does not overwrite it",
     "out": "",
   },
   "exported": {
@@ -284,7 +284,7 @@ exports[`export and import > export, then import into a new file, then refuse a 
   },
   "second": {
     "code": 2,
-    "err": "<dir>/copy.sqlite is not empty; flarewall import loads into an empty database only",
+    "err": "<dir>/copy.sqlite is not empty; flarealoy security import loads into an empty database only",
     "out": "",
   },
 }
@@ -293,7 +293,7 @@ exports[`export and import > export, then import into a new file, then refuse a 
 exports[`global error paths > --data set 1`] = `
 {
   "code": 2,
-  "err": "--data is gone; flarewall reads FLAREWALL_DB",
+  "err": "--data is gone; flarealoy reads FLAREALOY_DB",
   "out": "",
 }
 `;
@@ -301,7 +301,7 @@ exports[`global error paths > --data set 1`] = `
 exports[`global error paths > FLAREWALL_DATA set 1`] = `
 {
   "code": 2,
-  "err": "--data is gone; flarewall reads FLAREWALL_DB",
+  "err": "--data is gone; flarealoy reads FLAREALOY_DB",
   "out": "",
 }
 `;
@@ -310,72 +310,72 @@ exports[`global error paths > no database for every command that opens one 1`] =
 {
   "add example.com": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "apply --all": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "approve 1": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "backups example.com": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "diff": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "edit example.com": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "export <dir>/out.json": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "log": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "propose example.com -": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "reject 1": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "restore example.com 1": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "revert 1": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "show 1": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
   "status": {
     "code": 2,
-    "err": "no flarewall database at <dir>/missing/flarewall.sqlite; run flarewall init",
+    "err": "no flarealoy database at <dir>/missing/flarewall.sqlite; run flarealoy security init",
     "out": "",
   },
 }
@@ -385,27 +385,27 @@ exports[`global error paths > no token for every command that needs one 1`] = `
 {
   "add example.com": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "apply example.com": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "diff": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "status": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "tui": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
 }
@@ -421,11 +421,11 @@ exports[`init > creates the database, then refuses a second init 1`] = `
   "log": {
     "code": 0,
     "err": "",
-    "out": "#1  2026-10-22T09:00:03.000Z  baseline  approved  owner  flarewall init",
+    "out": "#1  2026-10-22T09:00:03.000Z  baseline  approved  owner  flarealoy security init",
   },
   "second": {
     "code": 2,
-    "err": "the database at <dir>/data/flarewall.sqlite already holds a baseline; flarewall init does not overwrite it",
+    "err": "the database at <dir>/data/flarewall.sqlite already holds a baseline; flarealoy security init does not overwrite it",
     "out": "",
   },
 }
@@ -622,7 +622,7 @@ exports[`propose, approve, and reject > error paths 1`] = `
   },
   "noInventory": {
     "code": 2,
-    "err": "run flarewall add other.example.net first",
+    "err": "run flarealoy security add other.example.net first",
     "out": "",
   },
   "rejectApproved": {
@@ -734,22 +734,22 @@ exports[`restore and backups > error paths 1`] = `
   },
   "missing": {
     "code": 2,
-    "err": "example.com: error: no backup 9 for this zone; list them with flarewall backups example.com",
+    "err": "example.com: error: no backup 9 for this zone; list them with flarealoy security backups example.com",
     "out": "",
   },
   "noToken": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "noTty": {
     "code": 2,
-    "err": "refusing to write: stdin is not a terminal, so flarewall cannot ask per zone; pass --yes to write without asking",
+    "err": "refusing to write: stdin is not a terminal, so flarealoy cannot ask per zone; pass --yes to write without asking",
     "out": "",
   },
   "otherZone": {
     "code": 2,
-    "err": "example.net: error: no backup 1 for this zone; list them with flarewall backups example.net",
+    "err": "example.net: error: no backup 1 for this zone; list them with flarealoy security backups example.net",
     "out": "",
   },
 }
@@ -842,7 +842,7 @@ exports[`tui > error paths only 1`] = `
   },
   "noToken": {
     "code": 2,
-    "err": "CLOUDFLARE_API_TOKEN is not set; flarewall reads the Cloudflare token from this variable only",
+    "err": "CLOUDFLARE_API_TOKEN is not set; flarealoy reads the Cloudflare token from this variable only",
     "out": "",
   },
   "noTty": {
@@ -857,7 +857,7 @@ exports[`usage > --help 1`] = `
 {
   "code": 0,
   "err": "",
-  "out": "Usage: flarewall <command> [options]
+  "out": "Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -892,8 +892,8 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
@@ -906,7 +906,7 @@ exports[`usage > -h with a command 1`] = `
 {
   "code": 0,
   "err": "",
-  "out": "Usage: flarewall <command> [options]
+  "out": "Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -941,8 +941,8 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
@@ -954,7 +954,7 @@ Exit codes (other commands): 0 done or declined, 2 any failure or a usage error"
 exports[`usage > no command 1`] = `
 {
   "code": 2,
-  "err": "Usage: flarewall <command> [options]
+  "err": "Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -989,8 +989,8 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
@@ -1004,7 +1004,7 @@ exports[`usage > unknown command 1`] = `
 {
   "code": 2,
   "err": "unknown command: nope
-Usage: flarewall <command> [options]
+Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -1039,8 +1039,8 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 
@@ -1054,7 +1054,7 @@ exports[`usage > unknown option 1`] = `
 {
   "code": 2,
   "err": "Unknown option '--bogus'. To specify a positional argument starting with a '-', place it at the end of the command after '--', as in '-- "--bogus"
-Usage: flarewall <command> [options]
+Usage: flarealoy security <command> [options]
 
 Zone commands:
   init              Create the database and write the default baseline as its first revision
@@ -1089,8 +1089,8 @@ Options:
   -h, --help        Show this help
 
 Environment:
-  FLAREWALL_DB          The database file (default: $XDG_DATA_HOME/flarewall/flarewall.sqlite,
-                        or ~/.local/share/flarewall/flarewall.sqlite)
+  FLAREALOY_DB          The database file (default: $XDG_DATA_HOME/flarealoy/flarealoy.sqlite,
+                        or ~/.local/share/flarealoy/flarealoy.sqlite)
   CLOUDFLARE_API_TOKEN  The Cloudflare API token (add, status, diff, apply, restore, tui)
   EDITOR                The editor for edit (VISUAL first, vi when neither is set)
 

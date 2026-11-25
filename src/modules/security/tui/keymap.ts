@@ -91,7 +91,7 @@ export const KEYMAP: readonly Binding[] = [
   { scope: 'zones', keys: ['space'], action: 'mark', help: 'Mark or unmark the selected zone', hint: 'space mark' },
   { scope: 'zones', keys: ['ctrl-a'], action: 'mark-all', help: 'Mark all visible zones' },
   { scope: 'zones', keys: ['ctrl-x'], action: 'clear-marks', help: 'Clear every mark' },
-  { scope: 'zones', keys: ['+'], action: 'add', help: 'Write an inventory entry for each marked not managed zone, or the selected one, as flarewall add does, then reload', hint: '+ add' },
+  { scope: 'zones', keys: ['+'], action: 'add', help: 'Write an inventory entry for each marked not managed zone, or the selected one, as flarealoy security add does, then reload', hint: '+ add' },
   { scope: 'zones', keys: ['d'], action: 'dry-run', help: 'Dry run on the marked zones, or the selected zone. The plan shows in the diff pane', hint: 'd dry run' },
   { scope: 'zones', keys: ['a'], action: 'apply', help: 'Write on the marked zones, or the selected zone. Opens CONFIRM once per zone', hint: 'a apply' },
   { scope: 'zones', keys: ['r'], action: 'refresh', help: 'Refresh the selected zone', hint: 'r refresh' },

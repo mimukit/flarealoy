@@ -404,7 +404,7 @@ export function diffPaneLines(state: TuiState): PaneLine[] {
 
 /** The diff pane of a `not managed` zone: the next step, and the empty state when no zone is managed. */
 function notManagedLines(state: TuiState, zone: string): DiffLine[] {
-  const lines = ['No inventory entry for this zone.', `Press + to add it, as flarewall add ${zone} does.`];
+  const lines = ['No inventory entry for this zone.', `Press + to add it, as flarealoy security add ${zone} does.`];
   if (state.zones.every((r) => r.inventory === undefined)) {
     lines.push('', `No zone has an inventory entry: 0 of ${state.zones.length} zones are managed.`, 'Mark the zones you want to manage with space, then press +.');
   }
@@ -852,7 +852,7 @@ export function update(state: TuiState, event: TuiEvent): Update {
     case 'zone-failed':
       return onZoneEnd(state, event);
     case 'zone-added':
-      return none(onAdded(state, event.zone, `${event.zone}: saved ${event.revision}; sort its hosts with flarewall edit ${event.zone}, then press R`));
+      return none(onAdded(state, event.zone, `${event.zone}: saved ${event.revision}; sort its hosts with flarealoy security edit ${event.zone}, then press R`));
     case 'add-failed':
       return none(onAdded(state, event.zone, `${event.zone}: error: ${event.error}`));
     case 'adds-done':

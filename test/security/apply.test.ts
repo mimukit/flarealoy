@@ -303,7 +303,7 @@ describe('restore (C15)', () => {
     expect((await cli('apply', 'example.com', '--write', '--yes')).code).toBe(0);
     const other = await cli('restore', 'example.org', '1');
     expect(other.code).toBe(2);
-    expect(other.err).toBe('example.org: error: no backup 1 for this zone; list them with flarewall backups example.org');
+    expect(other.err).toBe('example.org: error: no backup 1 for this zone; list them with flarealoy security backups example.org');
     expect((await cli('restore', 'example.com', '9')).code).toBe(2);
     expect((await cli('restore', 'example.com', 'latest')).err).toBe('restore takes a zone name and a backup id');
   });

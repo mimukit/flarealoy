@@ -68,7 +68,7 @@ export function createRunner(deps: RunnerDeps): EffectRunner {
         const { zone, write, data } = effect;
         const inventory = data.inventories.find((i) => i.zone === zone);
         if (inventory === undefined) {
-          dispatch({ type: 'zone-failed', zone, error: `no inventory entry; run flarewall add ${zone}` });
+          dispatch({ type: 'zone-failed', zone, error: `no inventory entry; run flarealoy security add ${zone}` });
           return;
         }
         const backup: BackupWriter = async (name, state) => {

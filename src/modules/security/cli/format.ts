@@ -68,7 +68,7 @@ function changeSection(c: Change): string {
 /** One zone's `diff` output: its state, then its legacy rules, changes, and unowned rules. */
 export function zoneDiffLines(r: ZoneReport, options: DiffLineOptions = {}): DiffLine[] {
   if (r.state === 'error') return [{ text: `${r.zone}: error: ${r.error ?? ''}` }];
-  if (r.state === 'not managed') return [{ text: `${r.zone}: not managed (no inventory entry; run flarewall add ${r.zone})` }];
+  if (r.state === 'not managed') return [{ text: `${r.zone}: not managed (no inventory entry; run flarealoy security add ${r.zone})` }];
   const lines: DiffLine[] = [{ text: `${r.zone}: ${r.state}` }];
   const diff = r.diff;
   if (diff === undefined) return lines;

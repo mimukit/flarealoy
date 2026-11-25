@@ -30,13 +30,13 @@ export const MEMORY = ':memory:';
 export const BUSY_TIMEOUT_MS = 5000;
 
 /**
- * The database file: FLAREWALL_DB, else $XDG_DATA_HOME/flarewall/flarewall.sqlite, else
- * ~/.local/share/flarewall/flarewall.sqlite.
+ * The database file: FLAREALOY_DB, else $XDG_DATA_HOME/flarealoy/flarealoy.sqlite, else
+ * ~/.local/share/flarealoy/flarealoy.sqlite.
  */
 export function resolveDbPath(env: Record<string, string | undefined>): string {
-  if (env.FLAREWALL_DB !== undefined && env.FLAREWALL_DB !== '') return env.FLAREWALL_DB;
+  if (env.FLAREALOY_DB !== undefined && env.FLAREALOY_DB !== '') return env.FLAREALOY_DB;
   const dataHome = env.XDG_DATA_HOME !== undefined && env.XDG_DATA_HOME !== '' ? env.XDG_DATA_HOME : join(env.HOME || homedir(), '.local', 'share');
-  return join(dataHome, 'flarewall', 'flarewall.sqlite');
+  return join(dataHome, 'flarealoy', 'flarealoy.sqlite');
 }
 
 export function sha256(text: string): string {
@@ -89,7 +89,7 @@ export function openSqliteStore(path: string, options: OpenOptions = {}): DataSt
   const stamp = () => now().toISOString();
   if (path !== MEMORY) {
     if (!existsSync(path)) {
-      if (options.create !== true) throw new StoreError(`no flarewall database at ${path}; run flarewall init`);
+      if (options.create !== true) throw new StoreError(`no flarealoy database at ${path}; run flarealoy security init`);
       createFile(path);
     }
   }
@@ -209,9 +209,9 @@ export function openSqliteStore(path: string, options: OpenOptions = {}): DataSt
     importData: async (data) =>
       immediate(() => {
         if (data.schema_version !== SCHEMA_VERSION) {
-          throw new StoreError(`the export has schema version ${data.schema_version}, but this flarewall writes ${SCHEMA_VERSION}`);
+          throw new StoreError(`the export has schema version ${data.schema_version}, but this flarealoy writes ${SCHEMA_VERSION}`);
         }
-        if (!isEmpty(db)) throw new StoreError(`${path} is not empty; flarewall import loads into an empty database only`);
+        if (!isEmpty(db)) throw new StoreError(`${path} is not empty; flarealoy security import loads into an empty database only`);
         for (const table of Object.keys(EXPORT_TABLES) as ExportTable[]) {
           const insert = db.prepare(SQL.importRow(table));
           for (const row of data[table]) {
@@ -235,7 +235,7 @@ function migrate(db: DatabaseSync): void {
     return row === undefined ? 0 : Number(row.value);
   };
   let at = version();
-  if (at > SCHEMA_VERSION) throw new StoreError('the database schema is newer than this flarewall; upgrade flarewall');
+  if (at > SCHEMA_VERSION) throw new StoreError('the database schema is newer than this flarealoy; upgrade flarealoy');
   while (at < SCHEMA_VERSION) {
     db.exec('BEGIN IMMEDIATE');
     try {

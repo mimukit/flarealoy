@@ -128,7 +128,7 @@ describe('backups and runs', () => {
 describe('the file', () => {
   it('refuses a missing file unless asked to create it', () => {
     const path = join(dir, 'nope.sqlite');
-    expect(() => openSqliteStore(path)).toThrow(`no flarewall database at ${path}; run flarewall init`);
+    expect(() => openSqliteStore(path)).toThrow(`no flarealoy database at ${path}; run flarealoy security init`);
   });
 
   it('creates the file with mode 0600 in a 0700 directory, with the DELETE journal', async () => {
@@ -146,14 +146,14 @@ describe('the file', () => {
     }
   });
 
-  it('sets the schema version, and stops on a file from a newer flarewall', () => {
+  it('sets the schema version, and stops on a file from a newer flarealoy', () => {
     const path = join(dir, 'f.sqlite');
     openSqliteStore(path, { create: true }).close();
     const raw = new DatabaseSync(path);
     expect(raw.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get()).toEqual({ value: String(SCHEMA_VERSION) });
     raw.exec(`UPDATE meta SET value = '${SCHEMA_VERSION + 1}' WHERE key = 'schema_version'`);
     raw.close();
-    expect(() => openSqliteStore(path)).toThrow('the database schema is newer than this flarewall; upgrade flarewall');
+    expect(() => openSqliteStore(path)).toThrow('the database schema is newer than this flarealoy; upgrade flarealoy');
   });
 
   it('applies the migrations to an older (empty) file', async () => {
@@ -164,10 +164,10 @@ describe('the file', () => {
     db.close();
   });
 
-  it('resolves the path from FLAREWALL_DB, then XDG_DATA_HOME, then HOME', () => {
-    expect(resolveDbPath({ FLAREWALL_DB: '/x/y.sqlite', XDG_DATA_HOME: '/d' })).toBe('/x/y.sqlite');
-    expect(resolveDbPath({ XDG_DATA_HOME: '/d', HOME: '/h' })).toBe('/d/flarewall/flarewall.sqlite');
-    expect(resolveDbPath({ HOME: '/h' })).toBe('/h/.local/share/flarewall/flarewall.sqlite');
+  it('resolves the path from FLAREALOY_DB, then XDG_DATA_HOME, then HOME', () => {
+    expect(resolveDbPath({ FLAREALOY_DB: '/x/y.sqlite', XDG_DATA_HOME: '/d' })).toBe('/x/y.sqlite');
+    expect(resolveDbPath({ XDG_DATA_HOME: '/d', HOME: '/h' })).toBe('/d/flarealoy/flarealoy.sqlite');
+    expect(resolveDbPath({ HOME: '/h' })).toBe('/h/.local/share/flarealoy/flarealoy.sqlite');
   });
 });
 
@@ -191,6 +191,6 @@ describe('export and import', () => {
 
   it('rejects a file that is not an export', () => {
     expect(() => parseExport('{')).toThrow(/not valid JSON/);
-    expect(() => parseExport('{"flarewall_export": 1}')).toThrow(/not a flarewall export/);
+    expect(() => parseExport('{"flarewall_export": 1}')).toThrow(/not a flarealoy export/);
   });
 });

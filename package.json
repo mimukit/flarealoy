@@ -1,7 +1,7 @@
 {
-  "name": "flarewall",
+  "name": "flarealoy",
   "version": "0.1.0",
-  "description": "Keep a set of Cloudflare zones on one security baseline.",
+  "description": "Manage and monitor Cloudflare accounts: one security baseline for every zone, and usage alerts.",
   "type": "module",
   "license": "MIT",
   "author": "Mukitul Islam Mukit",
@@ -9,7 +9,7 @@
     "node": ">=22.13"
   },
   "bin": {
-    "flarewall": "dist/modules/security/cli/main.js"
+    "flarealoy": "dist/cli/main.js"
   },
   "files": [
     "dist"

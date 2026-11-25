@@ -153,7 +153,7 @@ describe('global error paths', () => {
     const db = join(dir, 'missing', 'flarewall.sqlite');
     const results: Record<string, unknown> = {};
     for (const argv of [['add', 'example.com'], ['status'], ['diff'], ['apply', '--all'], ['restore', 'example.com', '1'], ['backups', 'example.com'], ['edit', 'example.com'], ['propose', 'example.com', '-'], ['log'], ['show', '1'], ['revert', '1'], ['approve', '1'], ['reject', '1'], ['export', join(dir, 'out.json')]]) {
-      results[scrub([argv.join(' ')])] = await fileCli(argv, { ...TOKEN, FLAREWALL_DB: db });
+      results[scrub([argv.join(' ')])] = await fileCli(argv, { ...TOKEN, FLAREALOY_DB: db });
     }
     expect(results).toMatchSnapshot();
   });
@@ -161,14 +161,14 @@ describe('global error paths', () => {
 
 describe('init', () => {
   it('creates the database, then refuses a second init', async () => {
-    const env = { FLAREWALL_DB: join(dir, 'data', 'flarewall.sqlite') };
+    const env = { FLAREALOY_DB: join(dir, 'data', 'flarewall.sqlite') };
     const first = await fileCli(['init'], env);
     const second = await fileCli(['init'], env);
     const log = await fileCli(['log'], env);
     expect({ first, second, log }).toMatchSnapshot();
   });
   it('takes no arguments', async () => {
-    expect(await fileCli(['init', 'extra'], { FLAREWALL_DB: join(dir, 'flarewall.sqlite') })).toMatchSnapshot();
+    expect(await fileCli(['init', 'extra'], { FLAREALOY_DB: join(dir, 'flarewall.sqlite') })).toMatchSnapshot();
   });
 });
 
@@ -372,7 +372,7 @@ describe('export and import', () => {
     const file = join(dir, 'export.json');
     const exported = await cli(['export', file]);
     const again = await cli(['export', file]);
-    const env = { FLAREWALL_DB: join(dir, 'copy.sqlite') };
+    const env = { FLAREALOY_DB: join(dir, 'copy.sqlite') };
     const imported = await fileCli(['import', file], env);
     const second = await fileCli(['import', file], env);
     const log = await fileCli(['log'], env);
@@ -381,7 +381,7 @@ describe('export and import', () => {
   it('error paths', async () => {
     const bad = join(dir, 'bad.json');
     writeFileSync(bad, '{"nope":1}');
-    const env = { FLAREWALL_DB: join(dir, 'new.sqlite') };
+    const env = { FLAREALOY_DB: join(dir, 'new.sqlite') };
     expect({
       exportArgs: await cli(['export']),
       importArgs: await cli(['import']),
