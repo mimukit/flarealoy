@@ -19,7 +19,7 @@ pnpm-debug.log*
 .env.*
 !.env.example
 
-# flarewall data stays in the private data repo, never here
+# Old flarewall data folders (before plan 0003); Flarealoy data never goes in this repo
 /cf-backup/
 /backups/
 /inventory/
@@ -29,5 +29,5 @@ pnpm-debug.log*
 .vscode/
 .idea/
 
-# flarewall data lives in a SQLite file outside the repo, never here
+# Flarealoy data lives in a SQLite file outside the repo (FLAREALOY_DB), never here
 *.sqlite
