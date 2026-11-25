@@ -3,6 +3,7 @@
 // them on node:sqlite. Each module keeps its own SQL in its own store-sql.ts. Parameters are
 // positional (`?`).
 // Core module: no Node-only API here, so a Worker can run it.
+import { CORE_ALERTS_MIGRATION } from './alerts-sql.js';
 
 /** The name of the platform core in the meta keys and in the export's schema_versions. */
 export const CORE = 'core';
@@ -32,6 +33,8 @@ CREATE TABLE IF NOT EXISTS meta (
 );
 UPDATE meta SET key = 'schema_version.security' WHERE key = 'schema_version';
 `,
+  // 2: the sent alert keys of the notifier (src/core/notifier.ts).
+  CORE_ALERTS_MIGRATION,
 ];
 
 export const CORE_SQL = {
