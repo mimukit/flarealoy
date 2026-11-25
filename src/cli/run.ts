@@ -18,6 +18,7 @@ Commands:
   import <file|->     Load an export file (or stdin for -) into an empty database;
                       a flarewall export loads too
   test-alert          Send one test alert through the configured alert channel
+  run                 Run every registered job on its interval until SIGTERM
 
 Modules:
   security <command>  Keep the Cloudflare zones on one security baseline
@@ -33,7 +34,10 @@ Environment:
   FLAREALOY_NTFY_TOPIC, FLAREALOY_NTFY_URL, FLAREALOY_NTFY_TOKEN
                       The ntfy alert channel; see flarealoy test-alert --help
   CLOUDFLARE_API_TOKEN    The read token (CLOUDFLARE_WRITE_TOKEN when only that one is set)
-  CLOUDFLARE_WRITE_TOKEN  The write token; write commands need it`;
+  CLOUDFLARE_WRITE_TOKEN  The write token; write commands need it
+  FLAREALOY_HEARTBEAT_INTERVAL
+                      The run interval of the core.heartbeat job: 15m, 24h, 1d, or off
+                      (default: 24h)`;
 
 const OLD_DB = 'FLAREWALL_DB is gone; flarealoy reads FLAREALOY_DB. To move old data: flarewall export <file>, then flarealoy import <file>';
 
@@ -64,6 +68,8 @@ export async function run(
       const { runAccount } = await import('./account.js');
       return runAccount(rest, env, io);
     }
+    case 'run':
+      return runRun(rest, env, io);
     case 'init':
     case 'export':
     case 'import':
@@ -82,6 +88,17 @@ const defaultReadStdin = async (): Promise<string> => {
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
   return Buffer.concat(chunks).toString('utf8');
 };
+
+/** `flarealoy run`: the background service. */
+async function runRun(args: string[], env: Record<string, string | undefined>, io: Io): Promise<number> {
+  if (args.length > 0) {
+    io.err(`run takes no arguments, got: ${args.join(' ')}`);
+    return 2;
+  }
+  // A dynamic import, so node:sqlite loads only after main.ts filters its warning.
+  const { runService } = await import('../node/scheduler.js');
+  return runService(env, io);
+}
 
 /** The platform data commands: init, export and import over every registered module. */
 async function runData(

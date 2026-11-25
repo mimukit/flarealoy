@@ -1,0 +1,18 @@
+# One flarealoy service for Dokploy: it builds the image from this repo and keeps the database on
+# a named volume at /data. Set CLOUDFLARE_API_TOKEN and CLOUDFLARE_WRITE_TOKEN as environment
+# values in Dokploy; never write them into this file.
+services:
+  flarealoy:
+    build: .
+    restart: unless-stopped
+    # Give a running job time to finish after SIGTERM.
+    stop_grace_period: 60s
+    environment:
+      CLOUDFLARE_API_TOKEN: ${CLOUDFLARE_API_TOKEN:-}
+      CLOUDFLARE_WRITE_TOKEN: ${CLOUDFLARE_WRITE_TOKEN:-}
+      # FLAREALOY_HEARTBEAT_INTERVAL: 24h
+    volumes:
+      - flarealoy-data:/data
+
+volumes:
+  flarealoy-data:
