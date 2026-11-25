@@ -1,0 +1,15 @@
+# Never send private data or secrets into the build context.
+*.sqlite
+*.sqlite-*
+.env*
+# Built inside the image.
+node_modules
+dist
+# Not needed in the image.
+.git
+.github
+.afkkit
+coverage
+docs
+test
+*.log
